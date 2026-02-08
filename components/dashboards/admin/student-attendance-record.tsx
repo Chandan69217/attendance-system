@@ -206,7 +206,7 @@ export function StudentAttendanceRecord() {
                                     setFromDate(e.target.value)
                                     setCurrentPage(1)
                                 }}
-                                className="w-auto"
+                                className="w-auto min-w-[160px]"
                             />
                         </div>
 
@@ -220,7 +220,7 @@ export function StudentAttendanceRecord() {
                                     setToDate(e.target.value)
                                     setCurrentPage(1)
                                 }}
-                                className="w-auto"
+                                className="w-auto min-w-[160px]"
                             />
                         </div>
 
