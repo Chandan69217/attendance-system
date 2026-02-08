@@ -7,7 +7,6 @@ import { useAppState } from "@/lib/app-state"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-// import { weeklyAttendanceData, monthlyAttendanceData } from "@/lib/mock-data"
 import {
     Users, ClipboardList, GraduationCap, TrendingUp, TrendingDown, Clock,
     Search,
@@ -24,9 +23,9 @@ import { Label } from "@/components/ui/label"
 
 
 
-export function StudentAttendanceRecord() {
+export function FacultyAttendanceRecord() {
 
-    const { users, attendance, } = useAppState()
+    const { users, facultyAttendance, } = useAppState()
     const [searchTerm, setSearchTerm] = useState('')
     const [showOverlay, setShowOverlay] = useState(false)
     const wrapperRef = React.useRef<HTMLDivElement>(null)
@@ -39,12 +38,12 @@ export function StudentAttendanceRecord() {
 
     const filteredUsers = users.filter((u) => ((u.name.toLowerCase().includes(searchTerm.trim().toLowerCase())) ||
         (u.email.toLowerCase().includes(searchTerm.trim().toLowerCase())) ||
-        (u.id.toLowerCase() === searchTerm.trim().toLowerCase())) && (u.role === "student")
+        (u.id.toLowerCase() === searchTerm.trim().toLowerCase())) && (u.role === "faculty")
     )
 
 
-    const filterAttendance = attendance.filter((a) => {
-        if (selectedUser && a.studentId !== selectedUser.id) return false
+    const filterAttendance = facultyAttendance.filter((a) => {
+        if (selectedUser && a.facultyId !== selectedUser.id) return false
 
         if (fromDate && a.date < fromDate) return false
         if (toDate && a.date > toDate) return false
@@ -233,37 +232,45 @@ export function StudentAttendanceRecord() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Subject</TableHead>
+                                <TableHead>Faculty</TableHead>
                                 <TableHead>Date</TableHead>
-                                <TableHead>Method</TableHead>
+                                <TableHead>Check In</TableHead>
+                                <TableHead>Check Out</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Remarks</TableHead>
+                                <TableHead>Verification</TableHead>
+
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {paginatedAttendance.length === 0 &&
-                                <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No record found</TableCell></TableRow>
-                            }
-                            {paginatedAttendance.map((r) => (
-                                <TableRow key={r.id}>
+                            {paginatedAttendance.length === 0 ? (
+                                <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
+                            ) : paginatedAttendance.map((record) => (
+                                <TableRow key={record.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{r.studentName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                                            <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.facultyName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
                                             <div>
-                                                <p className="text-sm font-medium text-foreground">{r.studentName}</p>
-                                                <p className="text-xs text-muted-foreground">{r.studentId}</p>
+                                                <p className="text-sm font-medium text-foreground">{record.facultyName}</p>
+                                                <p className="text-xs text-muted-foreground">{record.facultyId}</p>
                                             </div>
                                         </div>
                                     </TableCell>
-                                    
-                                    <TableCell>{r.subject}</TableCell>
-                                    <TableCell>{r.date}</TableCell>
-                                    <TableCell><Badge variant="secondary" className="text-xs capitalize">{r.method?.replace("-", " ") ?? "manual"}</Badge></TableCell>
+                                    <TableCell className="text-sm">{record.date || "---"}</TableCell>
+                                    <TableCell className="text-sm">{record.checkIn || "---"}</TableCell>
+                                    <TableCell className="text-sm">{record.checkOut || "---"}</TableCell>
                                     <TableCell>
-                                        <Badge className={r.status === "present" ? "bg-primary/15 text-primary border-primary/20" : r.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
-                                            {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                                        <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
+                                            {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary" className={record.verificationStatus === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verificationStatus === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
+                                            {record.verificationStatus.charAt(0).toUpperCase() + record.verificationStatus.slice(1)}
+                                        </Badge>
+                                    </TableCell>
+
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -364,50 +371,61 @@ export function StudentAttendanceRecord() {
                 </Card>
             </div>
 
+          
+
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">Recent Attendance</CardTitle>
                     <CardDescription>Last recorded attendance entries</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Table>
+                    <CardContent className="p-0">
+                      <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Subject</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Method</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
+                          <TableRow>
+                            <TableHead>Faculty</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Check In</TableHead>
+                            <TableHead>Check Out</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Remarks</TableHead>
+                            <TableHead>Verification</TableHead>
+
+                          </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filterAttendance.length === 0 &&
-                                <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No record found</TableCell></TableRow>
-                            }
-                            {filterAttendance.slice(0, 6).map((r) => (
-                                <TableRow key={r.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{r.studentName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{r.studentName}</p>
-                                                <p className="text-xs text-muted-foreground">{r.studentId}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{r.subject}</TableCell>
-                                    <TableCell>{r.date}</TableCell>
-                                    <TableCell><Badge variant="secondary" className="text-xs capitalize">{r.method?.replace("-", " ") ?? "manual"}</Badge></TableCell>
-                                    <TableCell>
-                                        <Badge className={r.status === "present" ? "bg-primary/15 text-primary border-primary/20" : r.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
-                                            {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                                        </Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                          {filterAttendance.length === 0 ? (
+                            <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
+                          ) : filterAttendance.slice(0,6).map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.facultyName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                                  <div>
+                                    <p className="text-sm font-medium text-foreground">{record.facultyName}</p>
+                                    <p className="text-xs text-muted-foreground">{record.facultyId}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                                  <TableCell className="text-sm">{record.date || "---"}</TableCell>
+                              <TableCell className="text-sm">{record.checkIn || "---"}</TableCell>
+                              <TableCell className="text-sm">{record.checkOut || "---"}</TableCell>
+                              <TableCell>
+                                <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
+                                  {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className={record.verificationStatus === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verificationStatus === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
+                                  {record.verificationStatus.charAt(0).toUpperCase() + record.verificationStatus.slice(1)}
+                                </Badge>
+                              </TableCell>
+                    
+                            </TableRow>
+                          ))}
                         </TableBody>
-                    </Table>
-                </CardContent>
+                      </Table>
+                    </CardContent>
             </Card>
         </div>
     )

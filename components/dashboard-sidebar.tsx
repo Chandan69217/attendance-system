@@ -20,12 +20,14 @@ import {
   LayoutDashboard, Users, ClipboardList, BookOpen, Bell, BarChart3, Settings,
   Camera, FileText, Calendar, Send, ScanFace, User, LogOut, Fingerprint,
   Building2, CalendarDays, ShieldCheck,
+  CalendarCheck,
 } from "lucide-react"
 
 const adminNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, id: "overview" },
   { label: "User Management", icon: Users, id: "users" },
   { label: "Faculty Verification", icon: ShieldCheck, id: "faculty-attendance" },
+  { label: "Faculty Attendance", icon: CalendarCheck, id: "faculty-attendance-record" },
   { label: "Student Attendance", icon: ClipboardList, id: "attendance" },
   { label: "Departments", icon: Building2, id: "departments" },
   { label: "Academic Sessions", icon: CalendarDays, id: "sessions" },

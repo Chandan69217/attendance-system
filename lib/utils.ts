@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getWeeklyAttendanceChartData(
-  attendance: AttendanceRecord[],
+  attendance:any[],
   referenceDate: string
 ) {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -34,7 +34,7 @@ export function getWeeklyAttendanceChartData(
         (a) => ["present", "late"].includes(a.status)
       ).length,
       absent: dayAttendance.filter(
-        (a) => a.status === "absent"
+        (a) => ["absent","on-leave"].includes(a.status)
       ).length,
     }
   })
@@ -44,7 +44,7 @@ export function getWeeklyAttendanceChartData(
 
 
 export function getMonthlyAttendanceChartData(
-  attendance: AttendanceRecord[],
+  attendance: any[],
   year: number
 ) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]

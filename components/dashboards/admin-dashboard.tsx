@@ -26,6 +26,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, 
 import { UserManagement } from "./admin/user-management"
 import { FacultyAttendanceVerification } from "./admin/faculty-attendance-verification"
 import { StudentAttendanceRecord } from "./admin/student-attendance-record"
+import { FacultyAttendanceRecord } from "./admin/faculty-attendance-record"
 
 /* ─── Admin Overview ─────────────────────────────────────────── */
 function AdminOverview() {
@@ -576,6 +577,7 @@ const sectionTitles: Record<string, string> = {
   users: "User Management",
   "faculty-attendance": "Faculty Attendance Verification",
   attendance: "Student Attendance Records",
+  "faculty-attendance-record": "Faculty Attendance Records",
   departments: "Department Management",
   sessions: "Academic Sessions",
   notifications: "Notifications",
@@ -588,6 +590,7 @@ export function AdminDashboard({ activeSection }: { activeSection: string }) {
     case "users": return <UserManagement />
     case "faculty-attendance": return <FacultyAttendanceVerification />
     case "attendance": return <StudentAttendanceRecord />
+    case "faculty-attendance-record": return <FacultyAttendanceRecord />
     case "departments": return <DepartmentManagement />
     case "sessions": return <SessionManagement />
     case "notifications": return <AdminNotifications />
