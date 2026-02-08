@@ -197,7 +197,7 @@ export function StudentAttendanceRecord() {
                     <div className="flex justify-between gap-2">
 
                         <div className="flex flex-col gap-1">
-                            <Label htmlFor="from-date">From</Label>
+                            <Label htmlFor="from-date">Start Date</Label>
                             <Input
                                 id="from-date"
                                 type="date"
@@ -211,7 +211,7 @@ export function StudentAttendanceRecord() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                            <Label htmlFor="to-date">To</Label>
+                            <Label htmlFor="to-date">End Date</Label>
                             <Input
                                 id="to-date"
                                 type="date"
