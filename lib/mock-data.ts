@@ -21,7 +21,7 @@ export const mockAttendance: AttendanceRecord[] = [
   { id: "AT002", studentId: "S002", studentName: "Maria Garcia", date: "2026-02-06", status: "present", subject: "Data Structures", markedBy: "F001", method: "face-recognition" },
   { id: "AT003", studentId: "S003", studentName: "Ryan Patel", date: "2026-02-06", status: "absent", subject: "Data Structures", markedBy: "F001", method: "manual" },
   { id: "AT004", studentId: "S004", studentName: "Sophie Lee", date: "2026-02-06", status: "present", subject: "Linear Algebra", markedBy: "F002", method: "face-recognition" },
-  { id: "AT005", studentId: "S005", studentName: "David Kim", date: "2026-02-06", status: "late", subject: "Data Structures", markedBy: "F001", method: "self-marked" },
+  { id: "AT005", studentId: "S005", studentName: "David Kim", date: "2026-02-08", status: "late", subject: "Data Structures", markedBy: "F001", method: "self-marked" },
   { id: "AT006", studentId: "S006", studentName: "Emma Brown", date: "2026-02-06", status: "present", subject: "Linear Algebra", markedBy: "F002", method: "face-recognition" },
   { id: "AT007", studentId: "S001", studentName: "Alex Thompson", date: "2026-02-05", status: "present", subject: "Algorithms", markedBy: "F001", method: "face-recognition" },
   { id: "AT008", studentId: "S002", studentName: "Maria Garcia", date: "2026-02-05", status: "absent", subject: "Algorithms", markedBy: "F001", method: "manual" },

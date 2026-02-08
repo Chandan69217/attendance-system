@@ -1,3 +1,5 @@
+"use client"
+
 import { useAppState } from "@/lib/app-state"
 import { useState } from "react"
 import { Role, User } from "@/lib/types"
@@ -46,7 +48,7 @@ export function UserManagement() {
    
     const filteredUsers = users.filter((u) =>
         (u.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
-            u.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
+            u.email.toLowerCase().includes(searchTerm.trim().toLowerCase())) &&
         (roleFilter === "all" || u.role === roleFilter) &&
         (statusFilter === "all" || u.status === statusFilter)
     )
@@ -208,7 +210,7 @@ export function UserManagement() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {paginatedUsers.length === 0 ? (
+                            {filteredUsers.length === 0 ? (
                                 <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell></TableRow>
                             ) : paginatedUsers.map((user) => (
                                 <TableRow key={user.id}>
@@ -250,7 +252,7 @@ export function UserManagement() {
                         </TableBody>
                     </Table>
 
-                    <Pagination className="my-4">
+                    {paginatedUsers.length >0 && <Pagination className="my-4">
                         <PaginationContent>
 
                             <PaginationItem>
@@ -299,7 +301,7 @@ export function UserManagement() {
                             </PaginationItem>
 
                         </PaginationContent>
-                    </Pagination>
+                    </Pagination>}
 
                 </CardContent>
             </Card>
