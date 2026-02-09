@@ -27,6 +27,8 @@ import { UserManagement } from "./admin/user-management"
 import { FacultyAttendanceVerification } from "./admin/faculty-attendance-verification"
 import { StudentAttendanceRecord } from "./admin/student-attendance-record"
 import { FacultyAttendanceRecord } from "./admin/faculty-attendance-record"
+import { FaceRecognition } from "./admin/face-recognition"
+
 
 /* ─── Admin Overview ─────────────────────────────────────────── */
 function AdminOverview() {
@@ -182,6 +184,7 @@ function DepartmentManagement() {
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild><Button className="gap-2"><Building2 className="h-4 w-4" />Add Department</Button></DialogTrigger>
           <DialogContent>
+            <DialogTitle className="sr-only"></DialogTitle>
             <DialogHeader><DialogTitle>Add Department</DialogTitle><DialogDescription>Create a new academic department.</DialogDescription></DialogHeader>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2"><Label>Department Name</Label><Input value={newDept.name} onChange={(e) => setNewDept({ ...newDept, name: e.target.value })} placeholder="e.g. Electronics" /></div>
@@ -248,6 +251,7 @@ function SessionManagement() {
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild><Button className="gap-2"><CalendarDays className="h-4 w-4" />New Session</Button></DialogTrigger>
           <DialogContent>
+            <DialogTitle className="sr-only"></DialogTitle>
             <DialogHeader><DialogTitle>Create Session</DialogTitle><DialogDescription>Add a new academic session.</DialogDescription></DialogHeader>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2"><Label>Session Name</Label><Input value={newSession.name} onChange={(e) => setNewSession({ ...newSession, name: e.target.value })} placeholder="e.g. Summer 2026" /></div>
@@ -579,6 +583,7 @@ const sectionTitles: Record<string, string> = {
   attendance: "Student Attendance Records",
   "faculty-attendance-record": "Faculty Attendance Records",
   departments: "Department Management",
+  "face-recognition": "Face Recognition",
   sessions: "Academic Sessions",
   notifications: "Notifications",
   reports: "Reports & Analytics",
@@ -588,6 +593,7 @@ const sectionTitles: Record<string, string> = {
 export function AdminDashboard({ activeSection }: { activeSection: string }) {
   switch (activeSection) {
     case "users": return <UserManagement />
+    case "face-recognition": return <FaceRecognition/>
     case "faculty-attendance": return <FacultyAttendanceVerification />
     case "attendance": return <StudentAttendanceRecord />
     case "faculty-attendance-record": return <FacultyAttendanceRecord />

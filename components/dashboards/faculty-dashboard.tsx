@@ -409,6 +409,7 @@ function FacultyAssignments() {
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild><Button className="gap-2"><Plus className="h-4 w-4" />New Assignment</Button></DialogTrigger>
           <DialogContent>
+            <DialogTitle className="sr-only"></DialogTitle>
             <DialogHeader><DialogTitle>Create Assignment</DialogTitle><DialogDescription>Add a new assignment for students.</DialogDescription></DialogHeader>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2"><Label>Title</Label><Input value={newAssign.title} onChange={(e) => setNewAssign({ ...newAssign, title: e.target.value })} placeholder="Assignment title" /></div>
@@ -482,6 +483,7 @@ function FacultyExams() {
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild><Button className="gap-2"><Plus className="h-4 w-4" />Schedule Exam</Button></DialogTrigger>
           <DialogContent>
+            <DialogTitle className="sr-only"></DialogTitle>
             <DialogHeader><DialogTitle>Schedule Exam</DialogTitle><DialogDescription>Add a new examination.</DialogDescription></DialogHeader>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">

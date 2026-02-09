@@ -309,6 +309,7 @@ export function UserManagement() {
 
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
                 <DialogContent>
+                    <DialogTitle className="sr-only"></DialogTitle>
                     <DialogHeader><DialogTitle>User Details</DialogTitle></DialogHeader>
                     {viewUser && (
                         <div className="flex flex-col gap-4">
@@ -371,6 +372,7 @@ function AddUpdateUser({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild/>
             <DialogContent>
+                <DialogTitle className="sr-only"></DialogTitle>
                 <DialogHeader>
                     <DialogTitle>
                         {mode === "add" ? "Add New User" : "Edit User"}

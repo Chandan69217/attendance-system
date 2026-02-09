@@ -1,24 +1,28 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { AttendanceRecord } from './types'
+import { AttendanceRecord, FacultyAttendance } from './types'
+import { FacultyAttendanceRecord } from '@/components/dashboards/admin/faculty-attendance-record'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function getWeeklyAttendanceChartData(
-  attendance:any[],
+  attendance: (FacultyAttendance | AttendanceRecord)[],
   referenceDate: string
 ) {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
   const ref = new Date(referenceDate)
-
+  
   const startOfWeek = new Date(ref)
+
   startOfWeek.setDate(ref.getDate() - ((ref.getDay() + 6) % 7))
+
 
   return Array.from({ length: 6 }).map((_, i) => {
     const dayDate = new Date(startOfWeek)
+
     dayDate.setDate(startOfWeek.getDate() + i)
 
 
@@ -28,17 +32,20 @@ export function getWeeklyAttendanceChartData(
       (a) => a.date === dayStr
     )
 
+
     return {
       day: days[dayDate.getDay()],
       present: dayAttendance.filter(
         (a) => ["present", "late"].includes(a.status)
       ).length,
       absent: dayAttendance.filter(
-        (a) => ["absent","on-leave"].includes(a.status)
+        (a) => ["absent", "on-leave"].includes(a.status)
       ).length,
     }
   })
 }
+
+
 
 
 

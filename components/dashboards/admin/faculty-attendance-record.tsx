@@ -104,8 +104,8 @@ export function FacultyAttendanceRecord() {
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-foreground">Student Attendance</h3>
-                    <p className="text-sm text-muted-foreground">Student Attendance summary and statistics</p>
+                    <h3 className="text-lg font-semibold text-foreground">Faculty Attendance</h3>
+                    <p className="text-sm text-muted-foreground">Faculty Attendance summary and statistics</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={handleReset} className=" gap-2 bg-transparent
