@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { LocationPicker } from "@/components/ui/location-picker"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useAppState } from "@/lib/app-state"
@@ -33,6 +34,25 @@ export function AdminSettings() {
                         <div className="flex flex-col gap-2"><Label>Confidence Threshold (%)</Label><Input type="number" value={settings.confidenceThreshold} onChange={(e) => updateSetting("confidenceThreshold", Number(e.target.value))} /><p className="text-xs text-muted-foreground">Minimum confidence for face matching</p></div>
                         <div className="flex flex-col gap-2"><Label>Late Threshold (minutes)</Label><Input type="number" value={settings.lateThreshold} onChange={(e) => updateSetting("lateThreshold", Number(e.target.value))} /><p className="text-xs text-muted-foreground">Minutes after class start to mark as late</p></div>
                         <div className="flex flex-col gap-2"><Label>Max Self Check-In Distance (m)</Label><Input type="number" value={settings.maxCheckInDistance} onChange={(e) => updateSetting("maxCheckInDistance", Number(e.target.value))} /><p className="text-xs text-muted-foreground">Geofencing radius for self-attendance</p></div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <Label>Latitude</Label>
+                                <Input value={settings.latitude} readOnly />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label>Longitude</Label>
+                                <Input value={settings.longitude} readOnly />
+                            </div>
+                        </div>
+
+                        {/* <LocationPicker
+                            onSelect={(lat, lng) => {
+                                updateSetting("latitude", lat)
+                                updateSetting("longitude", lng)
+                            }}
+                        /> */}
+
                         <Button className="self-start" onClick={() => handleSave("Recognition")}>Save Changes</Button>
                     </CardContent>
                 </Card>

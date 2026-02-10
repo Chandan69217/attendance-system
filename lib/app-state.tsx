@@ -30,6 +30,9 @@ interface AppSettings {
   semesterStart: string
   semesterEnd: string
   holidays: string
+  latitude:number
+  longitude: number
+
 }
 
 interface AppStateContextType {
@@ -72,6 +75,8 @@ const defaultSettings: AppSettings = {
   semesterStart: "2026-01-15",
   semesterEnd: "2026-05-30",
   holidays: "2026-02-17, 2026-03-30, 2026-04-20",
+  latitude:0,
+  longitude:0,
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
