@@ -1,12 +1,13 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppState } from "@/lib/app-state"
 import { getMonthlyAttendanceChartData, getSubjectAttendanceChartData, getWeeklyAttendanceChartData } from "@/lib/utils"
-import { Badge, Download, Table, TrendingDown, TrendingUp } from "lucide-react"
+import {  Download, TrendingDown, TrendingUp } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart, Tooltip as RechartsTooltip, Legend } from "recharts"
 
 export function AdminReports() {
