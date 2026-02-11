@@ -144,6 +144,7 @@ export function FacultyAssignments() {
                 submissions={submissions}
                 onReview={(s) => {
                     setSelectedSubmission(s)
+                    setSubmissionDialogOpen(false)
                     setReviewDialogOpen(true)
                 }}
             />
@@ -151,14 +152,20 @@ export function FacultyAssignments() {
             <ReviewSubmissionDialog
                 open={reviewDialogOpen}
                 submission={selectedSubmission}
-                onClose={() => setReviewDialogOpen(false)}
+                onClose={() => {
+                    setReviewDialogOpen(false)
+                    setSubmissionDialogOpen(true)
+                }
+                }
                 onApprove={(id, remarks) => {
                     console.log("Approved", id, remarks)
                     setReviewDialogOpen(false)
+                    setSubmissionDialogOpen(true)
                 }}
                 onReject={(id, remarks) => {
                     console.log("Rejected", id, remarks)
                     setReviewDialogOpen(false)
+                    setSubmissionDialogOpen(true)
                 }}
             />
 

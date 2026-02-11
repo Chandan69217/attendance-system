@@ -81,6 +81,66 @@ export const mockNotifications: Notification[] = [
   { id: "N006", title: "Attendance Marked", message: "Your attendance for Data Structures on Feb 6 has been recorded.", category: "attendance", read: false, timestamp: "2026-02-06T09:15:00Z" },
 ]
 
+export const mockClasses: Class[] = [
+  {
+    id: "C101",
+    name: "B.Tech 1st Year",
+    section: "A",
+    classTeacher: "Dr. Rahul Sharma",
+    studentCount: 62,
+  },
+  {
+    id: "C102",
+    name: "B.Tech 1st Year",
+    section: "B",
+    classTeacher: "Prof. Anjali Mehta",
+    studentCount: 58,
+  },
+  {
+    id: "C201",
+    name: "B.Tech 2nd Year",
+    section: "A",
+    classTeacher: "Dr. Vikram Singh",
+    studentCount: 55,
+  },
+  {
+    id: "C202",
+    name: "B.Tech 2nd Year",
+    section: "B",
+    classTeacher: "Prof. Neha Kapoor",
+    studentCount: 60,
+  },
+  {
+    id: "C301",
+    name: "B.Tech 3rd Year",
+    section: "A",
+    classTeacher: "Dr. Arjun Verma",
+    studentCount: 48,
+  },
+  {
+    id: "C302",
+    name: "B.Tech 3rd Year",
+    section: "B",
+    classTeacher: "Prof. Sneha Iyer",
+    studentCount: 52,
+  },
+  {
+    id: "C401",
+    name: "B.Tech 4th Year",
+    section: "A",
+    classTeacher: "Dr. Manish Gupta",
+    studentCount: 44,
+  },
+  {
+    id: "C501",
+    name: "M.Tech 1st Year",
+    section: "A",
+    classTeacher: "Prof. Kavita Rao",
+    studentCount: 28,
+  },
+]
+
+
 export const weeklyAttendanceData = [
   { day: "Mon", present: 42, absent: 8 },
   { day: "Tue", present: 45, absent: 5 },

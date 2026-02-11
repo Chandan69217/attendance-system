@@ -81,3 +81,12 @@ export interface AcademicSession {
   endDate: string
   status: "active" | "upcoming" | "completed"
 }
+
+
+export interface Class {
+  id: string
+  name: string
+  department: string
+  classTeacher: string
+  studentCount: number
+}

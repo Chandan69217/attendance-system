@@ -1,5 +1,6 @@
 "use client"
 
+import { AcademyCalendar } from "../academy-calendar"
 import { AttendanceCamera } from "./faculty/attendance-camera"
 import { FacultyAssignments } from "./faculty/faculty-assignments"
 import { FacultyAttendanceRecords } from "./faculty/faculty-attendance-record"
@@ -17,6 +18,7 @@ export function FacultyDashboard({ activeSection }: { activeSection: string }) {
     case "attendance": return <FacultyAttendanceRecords />
     case "assignments": return <FacultyAssignments />
     case "exams": return <FacultyExams />
+    case "academy-calendar" : return <AcademyCalendar/>
     case "notifications": return <FacultyNotifications />
     default: return <FacultyOverview />
   }
@@ -28,6 +30,7 @@ export const facultySectionTitles: Record<string, string> = {
   "attendance-camera": "Mark Class Attendance",
   attendance: "Class Attendance Records",
   assignments: "Assignments",
+  "academy-calendar": "Academy Calendar",
   exams: "Exam Schedules",
   notifications: "Send Notification",
 }

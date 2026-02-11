@@ -3,10 +3,11 @@
 import React from "react"
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
-import type { User, AttendanceRecord, FacultyAttendance, Assignment, Exam, Notification, Department, AcademicSession } from "./types"
+import type { User, AttendanceRecord, FacultyAttendance, Assignment, Exam, Notification, Department, AcademicSession, Class } from "./types"
 import {
   mockUsers, mockAttendance, mockFacultyAttendance, mockAssignments,
   mockExams, mockNotifications, mockDepartments, mockSessions,
+  mockClasses,
 } from "./mock-data"
 
 export interface Toast {
@@ -57,6 +58,8 @@ interface AppStateContextType {
   toasts: Toast[]
   addToast: (toast: Omit<Toast, "id">) => void
   removeToast: (id: string) => void
+  classes: Class[]
+  setClasses : React.Dispatch<React.SetStateAction<Class[]>>
 }
 
 const AppStateContext = createContext<AppStateContextType | null>(null)
@@ -90,6 +93,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<AcademicSession[]>(mockSessions)
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [classes,setClasses] = useState<Class[]>(mockClasses)
 
   const addToast = useCallback((toast: Omit<Toast, "id">) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -111,6 +115,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         facultyAttendance, setFacultyAttendance,
         assignments, setAssignments,
         exams, setExams,
+        classes, setClasses,
         notifications, setNotifications,
         departments, setDepartments,
         sessions, setSessions,

@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import {
   LayoutDashboard, Users, ClipboardList, BookOpen, Bell, BarChart3, Settings,
   Camera, FileText, Calendar, Send, ScanFace, User, LogOut, Fingerprint,
-  Building2, CalendarDays, ShieldCheck,
+  Building2, CalendarDays, ShieldCheck,School,
   CalendarCheck,
 } from "lucide-react"
 
@@ -31,7 +31,9 @@ const adminNavItems = [
   { label: "Faculty Attendance", icon: CalendarCheck, id: "faculty-attendance-record" },
   { label: "Student Attendance", icon: ClipboardList, id: "attendance" },
   { label: "Departments", icon: Building2, id: "departments" },
+  { label: "Classes", icon: School, id: "classes" },
   { label: "Academic Sessions", icon: CalendarDays, id: "sessions" },
+  { label: "Academy Calendar", icon: Calendar, id: "academy-calendar" },
   { label: "Notifications", icon: Bell, id: "notifications" },
   { label: "Reports & Analytics", icon: BarChart3, id: "reports" },
   { label: "Settings", icon: Settings, id: "settings" },
@@ -44,6 +46,7 @@ const facultyNavItems = [
   { label: "Class Records", icon: ClipboardList, id: "attendance" },
   { label: "Assignments", icon: FileText, id: "assignments" },
   { label: "Exam Schedules", icon: Calendar, id: "exams" },
+  { label: "Academy Calendar", icon: Calendar, id: "academy-calendar" },
   { label: "Send Notification", icon: Send, id: "notifications" },
 ]
 
@@ -53,6 +56,7 @@ const studentNavItems = [
   { label: "My Attendance", icon: ClipboardList, id: "attendance" },
   { label: "Assignments", icon: FileText, id: "assignments" },
   { label: "Exam Schedule", icon: Calendar, id: "exams" },
+  { label: "Academy Calendar", icon: Calendar, id: "academy-calendar" },
   { label: "Notifications", icon: Bell, id: "notifications" },
   { label: "Profile", icon: User, id: "profile" },
 ]

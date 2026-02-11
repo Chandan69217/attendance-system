@@ -11,6 +11,8 @@ import { AdminNotifications } from "./admin/admin-notification"
 import { DepartmentManagement } from "./admin/department-management"
 import { SessionManagement } from "./admin/session-management"
 import { AdminOverview } from "./admin/admin-overview"
+import { ClassManagement } from "./admin/class-management"
+import { AcademyCalendar } from "../academy-calendar"
 
 
 
@@ -21,8 +23,10 @@ const sectionTitles: Record<string, string> = {
   attendance: "Student Attendance Records",
   "faculty-attendance-record": "Faculty Attendance Records",
   departments: "Department Management",
+  classes : "Class Management",
   "face-recognition": "Face Recognition",
   sessions: "Academic Sessions",
+  "academy-calendar" : "Academy Calendar",
   notifications: "Notifications",
   reports: "Reports & Analytics",
   settings: "System Settings",
@@ -39,7 +43,9 @@ export function AdminDashboard({ activeSection }: { activeSection: string }) {
     case "sessions": return <SessionManagement />
     case "notifications": return <AdminNotifications />
     case "reports": return <AdminReports />
+    case "academy-calendar" : return <AcademyCalendar/>
     case "settings": return <AdminSettings />
+    case "classes": return <ClassManagement/>
     default: return <AdminOverview />
   }
 }
