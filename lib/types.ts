@@ -69,9 +69,10 @@ export interface Notification {
 export interface Department {
   id: string
   name: string
-  head: string
-  studentCount: number
-  facultyCount: number
+  head_id: string
+  head_name?:string
+  student_count: number
+  faculty_count: number
 }
 
 export interface AcademicSession {

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ScanFace, ShieldCheck, Lock, Mail, ArrowLeft } from "lucide-react"
+import { ScanFace, ShieldCheck, Lock, Mail, ArrowLeft, EyeOff, Eye, Loader2 } from "lucide-react"
 import Link from "next/link"
 import ForgotPassword from "./forgot-password"
 
@@ -24,28 +24,31 @@ export function LoginForm({ onBack }: LoginFormProps) {
   const [role, setRole] = useState<Role>("student")
   const [error, setError] = useState("")
   const [showForgot, setShowForgot] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
     setError("")
     if (!email || !password) {
       setError("Please fill in all fields")
       return
     }
-    const success = login(email, password, role)
-    if (!success) {
-      setError("Invalid credentials")
+    setLoading(true)
+    const response = await login(email, password, role)
+  
+  
+    if (!response.status) {
+      setError(response.message)
     }
+
+    setError(response.message)
+
+    setLoading(false)
+
+
   }
 
-  const quickLogin = (quickRole: Role) => {
-    const emails: Record<Role, string> = {
-      admin: "sarah.wilson@university.edu",
-      faculty: "james.carter@university.edu",
-      student: "alex.t@student.edu",
-    }
-    login(emails[quickRole], "demo", quickRole)
-  }
 
   return (
 
@@ -143,6 +146,11 @@ export function LoginForm({ onBack }: LoginFormProps) {
                 <CardDescription>Enter your credentials to access your dashboard</CardDescription>
               </CardHeader>
               <CardContent>
+                {error && (
+                  <div className="mb-4 p-3 text-sm text-red-600 bg-red-100 rounded-lg">
+                    {error}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="email" className="text-card-foreground">Email</Label>
@@ -173,12 +181,24 @@ export function LoginForm({ onBack }: LoginFormProps) {
                       <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         id="password"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="pl-10"
                       />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
@@ -197,16 +217,16 @@ export function LoginForm({ onBack }: LoginFormProps) {
                     </Select>
                   </div>
 
-                  {error && (
-                    <p className="text-sm text-destructive">{error}</p>
-                  )}
-
-                  <Button type="submit" className="mt-2 w-full">
-                    Sign In
+                  <Button type="submit" className="mt-2 w-full" disabled={loading}>
+                    {
+                      loading ? <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin"/> Sign In...
+                      </>:"Sign In"
+                    }
                   </Button>
                 </form>
 
-                <div className="mt-6 border-t border-border pt-4">
+                {/* <div className="mt-6 border-t border-border pt-4">
                   <p className="mb-3 text-center text-xs text-muted-foreground">Quick demo access</p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => quickLogin("admin")}>
@@ -219,7 +239,7 @@ export function LoginForm({ onBack }: LoginFormProps) {
                       Student
                     </Button>
                   </div>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
         }
