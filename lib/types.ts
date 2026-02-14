@@ -1,4 +1,5 @@
 export type Role = "admin" | "faculty" | "student"
+export type UserStatus = "active" | "inactive" | "suspended"
 
 export interface User {
   id: string
@@ -6,11 +7,25 @@ export interface User {
   email: string
   role: Role
   department?: string
+  dept_id?:string
+  class_id?:string
   class?: string
   avatar?: string
   phone?: string
-  joinDate?: string
-  status?: "active" | "inactive" | "suspended"
+  join_date?: string
+  status?: UserStatus
+}
+
+
+export interface UserUpdatePayload {
+  name?: string
+  email?: string
+  role?: Role
+  dept_id?: string
+  class_id?: string
+  avatar?: string
+  phone?: string
+  status?: UserStatus
 }
 
 export interface AttendanceRecord {
@@ -87,7 +102,13 @@ export interface AcademicSession {
 export interface Class {
   id: string
   name: string
-  department: string
-  classTeacher: string
-  studentCount: number
+  class_teacher_id:string
+  class_teacher:string,
+  dept_id:string
+  dept_name:string
+  student_count: string
+  created_at:string
+  create_bu:string
 }
+
+

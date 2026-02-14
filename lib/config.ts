@@ -20,5 +20,15 @@ export const DEPT_API = {
 }
 
 export const USER_API ={
-    "FILTER_USER": process.env.NEXT_PUBLIC_GET_FILTER_USER
+    "FILTER_USER": process.env.NEXT_PUBLIC_GET_FILTER_USER,
+    "USER_STATS": process.env.NEXT_PUBLIC_GET_USER_STATS,
+    "DELETE_USER": process.env.NEXT_PUBLIC_DELETE_USER,
+    "UPDATE_USER": process.env.NEXT_PUBLIC_UPDATE_USER,
+}
+
+export const CLASS_API={
+    "CREATE": process.env.NEXT_PUBLIC_CREATE_CLASS,
+    "GET": process.env.NEXT_PUBLIC_GET_CLASS,
+    "UPDATE": process.env.NEXT_PUBLIC_UPDATE_CLASS,
+    "DELETE": process.env.NEXT_PUBLIC_DELETE_CLASS,
 }

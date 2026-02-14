@@ -118,3 +118,30 @@ export function getSubjectAttendanceSummary(
     return acc
   }, {})
 }
+
+
+export const formatDateTime = (utcTimestamp: string | number | Date) => {
+  if (!utcTimestamp) return ""
+
+  const date = new Date(utcTimestamp)
+
+  const day = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+  }).format(date)
+
+  const month = new Intl.DateTimeFormat("en-GB", {
+    month: "2-digit",
+  }).format(date)
+
+  const year = new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+  }).format(date)
+
+  const time = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date)
+
+  return `${day}-${month}-${year}`
+}

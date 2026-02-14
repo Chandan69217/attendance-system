@@ -1,11 +1,11 @@
 "use client"
 
 import { useAppState } from "@/lib/app-state"
-import { useState } from "react"
-import { Role, User } from "@/lib/types"
+import { useEffect, useState } from "react"
+import { Class, Department, Role, User,UserStatus} from "@/lib/types"
 import { DialogFooter, Dialog, DialogTrigger, DialogHeader, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { UserX2, UserPen, Users, GraduationCap, Search, UserPlus, Trash2, CheckCircle2, Eye, Building2, CalendarDays, Ban, RotateCcw, Mail, Phone, } from "lucide-react"
+import { UserX2, UserPen, Users, GraduationCap, Search, UserPlus, Trash2, CheckCircle2, Eye, Building2, CalendarDays, Ban, RotateCcw, Mail, Phone, Loader2, } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -14,6 +14,14 @@ import { Table, TableBody, TableHead, TableCell, TableRow, TableHeader } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { deleteUser, getFilterUsers, updateUser } from "@/service/users.service"
+import { CircularLoader } from "@/components/ui/circular-loader"
+import { StorageKey } from "@/lib/constants"
+import { API_BASE_URL, AUTH_API, USER_API } from "@/lib/config"
+import { useAuth } from "@/lib/auth-context"
+import { formatDateTime } from "@/lib/utils"
+import { getDepartments } from "@/service/dept.service"
+import { getClasses } from "@/service/classes.service"
 
 
 
@@ -30,7 +38,10 @@ const emptyUser: User = {
 
 
 export function UserManagement() {
-    const { users, setUsers, addToast } = useAppState()
+    const { addToast } = useAppState()
+
+    const [users, setUsers] = useState<User[]>([])
+
 
     const [searchTerm, setSearchTerm] = useState("")
     const [roleFilter, setRoleFilter] = useState("all")
@@ -45,7 +56,8 @@ export function UserManagement() {
     const [viewUser, setViewUser] = useState<User | null>(null)
     const [editingUser, setEditingUser] = useState<User>(emptyUser)
 
-   
+    const [isLoading, setIsLoading] = useState(false)
+
     const filteredUsers = users.filter((u) =>
         (u.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
             u.email.toLowerCase().includes(searchTerm.trim().toLowerCase())) &&
@@ -62,24 +74,108 @@ export function UserManagement() {
     const endIndex = startIndex + itemsPerPage
     const paginatedUsers = filteredUsers.slice(startIndex, endIndex)
 
+    const [ studentCount,setStudentCount] = useState(0)
+    const [facultyCount, setfacultyCount] = useState(0)
+    const [activeCount, setActiveCount] = useState(0)
 
-    const studentCount = users.filter((u) => u.role === "student").length
-    const facultyCount = users.filter((u) => u.role === "faculty").length
-    const activeCount = users.filter((u) => u.status === "active").length
 
-    const handleToggleStatus = (id: string) => {
-            setUsers((prev) => prev.map((u) => u.id === id ? { ...u, status: u.status === "active" ? "suspended" as const : "active" as const } : u))
-            const u = users.find((u) => u.id === id)
-            addToast({ title: u?.status === "active" ? "User Suspended" : "User Activated", description: `${u?.name}'s account has been updated.`, variant: "default" })
-        }
 
-    const handleDeleteUser = (id: string) => {
-        const u = users.find((u) => u.id === id)
-        setUsers((prev) => prev.filter((u) => u.id !== id))
-        addToast({ title: "User Deleted", description: `${u?.name} has been removed from the system.`, variant: "destructive" })
+    const getUser = async (role: string) => {
+        setIsLoading(true)
+        setUsers(await getFilterUsers({ "search": role }))
+        setIsLoading(false)
     }
 
-  
+
+
+
+    useEffect(()=>{
+        const getStatus = async ()=>{
+            try {
+                const token = localStorage.getItem(StorageKey.TOKEN)
+
+                const res = await fetch(`${API_BASE_URL}${USER_API.USER_STATS}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-type": 'application/json',
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+
+                if(res.status == 401){
+                    useAuth().logout()
+                }
+
+                if(!res.ok) throw new Error("Something went wrong")
+
+                const data = await res.json()
+
+                setStudentCount( data.data['student_count'])
+                setfacultyCount( data.data['faculty_count'])
+                setActiveCount(data.data['active_count'])
+
+            } catch (error: any) {
+                console.error(error)
+            }
+        }
+        getStatus()
+    },[users])
+    
+    useEffect(() => {
+        getUser(roleFilter)
+    }, [roleFilter])
+
+    const handleToggleStatus = async (id: string) => {
+        
+        try {
+            const user = users.find((u) => u.id === id)
+    
+            const toggle_staus: UserStatus =
+                user?.status === "active"
+                    ? "suspended"
+                    : "active"
+
+    
+            const updated_user = await updateUser(id,{"status":toggle_staus})
+            if(updated_user){
+                await getUser(roleFilter)
+                addToast({ title:toggle_staus, description: `${user?.name}'s account has been updated.`, variant: "default" })
+            }
+
+        } catch (error: any) {
+            addToast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive"
+            })
+        }
+    }
+
+    const handleDeleteUser = async (id: string) => {
+        try {
+            const deleted_user = await deleteUser(id)
+
+            if (deleted_user) {
+                await getUser(roleFilter)
+
+                addToast({
+                    title: "User Deleted",
+                    description: `${deleted_user?.name ?? "User"} has been removed from the system.`,
+                    variant: "destructive"
+                })
+            }
+
+        } catch (error: any) {
+            addToast({
+                title: "Error",
+                description: error.message || "Failed to delete user",
+                variant: "destructive"
+            })
+        }
+    }
+
+
+
     const openAddDialog = () => {
         setDialogMode("add")
         setEditingUser(emptyUser)
@@ -93,40 +189,27 @@ export function UserManagement() {
         setIsAddOpen(true)
     }
 
-    const handleSubmit = () => {
-        if (!editingUser.name || !editingUser.email) return
-
+    const handleSubmit = async (form:User) => {
+        setIsAddOpen(false)
         if (dialogMode === "add") {
-            const id = `${editingUser.role === "student" ? "S" :
-                    editingUser.role === "faculty" ? "F" : "A"
-                }${String(users.length + 1).padStart(3, "0")}`
-
-            setUsers(prev => [
-                ...prev,
-                { ...editingUser, id, joinDate: "2026-02-06", status: "active" }
-            ])
-
+            await getUser(roleFilter)
             addToast({
                 title: "User Created",
-                description: `${editingUser.name} added successfully.`,
+                description: `${form.name} added successfully.`,
                 variant: "success"
             })
         } else {
-            setUsers(prev =>
-                prev.map(u => u.id === editingUser.id ? { ...u, ...editingUser } : u)
-            )
-
+            await getUser(roleFilter)
             addToast({
                 title: "Changes Saved",
-                description: `${editingUser.name} updated successfully.`,
+                description: `${form.name} updated successfully.`,
                 variant: "success"
             })
         }
 
-        setIsAddOpen(false)
     }
 
-   
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex justify-between items-center">
@@ -137,14 +220,13 @@ export function UserManagement() {
                     </p>
                 </div>
                 <Button onClick={openAddDialog} className="gap-2"><UserPlus className="h-4 w-4" />Add User</Button>
-               
+
             </div>
 
             <AddUpdateUser
                 open={isAddOpen}
                 onOpenChange={setIsAddOpen}
                 user={editingUser}
-                setUser={setEditingUser}
                 mode={dialogMode}
                 onSubmit={handleSubmit}
             />
@@ -210,49 +292,63 @@ export function UserManagement() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredUsers.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell></TableRow>
-                            ) : paginatedUsers.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarFallback className="bg-primary/10 text-primary text-xs">{user.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{user.name}</p>
-                                                <p className="text-xs text-muted-foreground">{user.email}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell><Badge variant="secondary" className="capitalize">{user.role}</Badge></TableCell>
-                                    <TableCell className="text-sm">{user.department}</TableCell>
-                                    <TableCell>
-                                        <Badge className={user.status === "active" ? "bg-primary/15 text-primary border-primary/20" : user.status === "suspended" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
-                                            {user.status?.charAt(0).toUpperCase()}{user.status?.slice(1)}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{user.joinDate}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setViewUser(user); setIsViewOpen(true) }}>
-                                                <Eye className="h-4 w-4" /><span className="sr-only">View details</span>
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleStatus(user.id)}>
-                                                {user.status === "active" ? <Ban className="h-4 w-4 text-chart-3" /> : <RotateCcw className="h-4 w-4 text-primary" />}
-                                                <span className="sr-only">{user.status === "active" ? "Suspend" : "Activate"}</span>
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteUser(user.id)}>
-                                                <Trash2 className="h-4 w-4" /><span className="sr-only">Delete</span>
-                                            </Button>
+                            {isLoading ? (
+
+                                <TableRow>
+                                    <TableCell colSpan={6}>
+                                        <div className="flex h-full items-center justify-center gap-2">
+                                            <Loader2 className="animate-spin w-5 h-5" />
+                                            <p>Loading...</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+
+
+                            ) : (
+                                filteredUsers.length === 0 ? (
+                                    <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell></TableRow>
+                                ) : paginatedUsers.map((user) => (
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className="bg-primary/10 text-primary text-xs">{user.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="text-sm font-medium text-foreground">{user.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                                                </div>  
+                                            </div>
+                                        </TableCell>
+                                        <TableCell><Badge variant="secondary" className="capitalize">{user.role}</Badge></TableCell>
+                                        <TableCell className="text-sm">{user.department??"N/A"}</TableCell>
+                                        <TableCell>
+                                            <Badge className={user.status === "active" ? "bg-primary/15 text-primary border-primary/20" : user.status === "suspended" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
+                                                {user.status?.charAt(0).toUpperCase()}{user.status?.slice(1)}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{user.join_date?.split("T")[0]}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setViewUser(user); setIsViewOpen(true) }}>
+                                                    <Eye className="h-4 w-4" /><span className="sr-only">View details</span>
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleStatus(user.id)}>
+                                                    {user.status === "active" ? <Ban className="h-4 w-4 text-chart-3" /> : <RotateCcw className="h-4 w-4 text-primary" />}
+                                                    <span className="sr-only">{user.status === "active" ? "Suspend" : "Activate"}</span>
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteUser(user.id)}>
+                                                    <Trash2 className="h-4 w-4" /><span className="sr-only">Delete</span>
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
 
-                    {paginatedUsers.length >0 && <Pagination className="my-4">
+                    {!isLoading&&paginatedUsers.length > 0 && <Pagination className="my-4">
                         <PaginationContent>
 
                             <PaginationItem>
@@ -305,7 +401,7 @@ export function UserManagement() {
 
                 </CardContent>
             </Card>
-            
+
 
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
                 <DialogContent>
@@ -326,7 +422,7 @@ export function UserManagement() {
                                 <Button
                                     variant={'ghost'}
                                     size="icon"
-                                    onClick={()=>openEditDialog(viewUser)}>
+                                    onClick={() => openEditDialog(viewUser)}>
                                     <UserPen className="h-4 w-4" />
                                 </Button>
 
@@ -334,15 +430,15 @@ export function UserManagement() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-muted-foreground" /><span>{viewUser.email}</span></div>
                                 <div className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" /><span>{viewUser.phone ?? "N/A"}</span></div>
-                                <div className="flex items-center gap-2 text-sm"><Building2 className="h-4 w-4 text-muted-foreground" /><span>{viewUser.department}</span></div>
-                                <div className="flex items-center gap-2 text-sm"><CalendarDays className="h-4 w-4 text-muted-foreground" /><span>Joined: {viewUser.joinDate}</span></div>
+                                <div className="flex items-center gap-2 text-sm"><Building2 className="h-4 w-4 text-muted-foreground" /><span>{viewUser.department??'N/A'}</span></div>
+                                <div className="flex items-center gap-2 text-sm"><CalendarDays className="h-4 w-4 text-muted-foreground" /><span>Joined: {formatDateTime(viewUser.join_date??"")}</span></div>
                             </div>
                             {viewUser.class && <p className="text-sm text-muted-foreground">Class: {viewUser.class}</p>}
                         </div>
                     )}
                 </DialogContent>
             </Dialog>
-           
+
         </div>
     )
 }
@@ -350,59 +446,205 @@ export function UserManagement() {
 
 
 
-interface AddUpdateUserProps{
+interface AddUpdateUserProps {
     open: boolean
-    onOpenChange :(open:boolean)=>void
-    user : User
-    mode: 'add'|'edit'
-    setUser : React.Dispatch<React.SetStateAction<User>>
-    onSubmit:()=>void
-}   
+    onOpenChange: (open: boolean) => void
+    user: User
+    mode: 'add' | 'edit'
+    onSubmit: (form: User) => Promise<void>
+}
+
+
+
+
 
 function AddUpdateUser({
     open,
     onOpenChange,
     user,
     mode,
-    setUser,
     onSubmit
 }: AddUpdateUserProps) {
 
+    const [departments, setDepartments] = useState<Department[]>([])
+    const [classes, setClasses] = useState<Class[]>([])
+    const [selectedDept, setSelectedDept] = useState<string | null>(null)
+    const [error,setError]= useState<string>()
+    const [isLoading,setIsLoading]= useState(false)
+    const [form,setForm] = useState<User>(user)
+
+ 
+    useEffect(() => {
+        setForm(user)
+        setSelectedDept(user?.dept_id || null)
+    }, [user])
+
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const deptData = await getDepartments()
+                const classData = await getClasses()
+
+                setDepartments(deptData)
+                setClasses(classData)
+            } catch (err: any) {
+                setError("Failed to load data")
+            }
+        }
+        loadData()
+    }, [])
+
+    const filteredClasses =
+        selectedDept
+            ? classes.filter((c) => c.dept_id === selectedDept)
+            : []
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError("")
+        setIsLoading(true)
+
+        try {
+
+            if (!form.name || !form.email) {
+                throw new Error("Name and Email are required")
+            }
+
+            if (!form.phone) {
+                throw new Error("Phone is required")
+            }
+
+            if (form.role === "student" && !form.class_id) {
+                throw new Error("Class is required for students")
+            }
+
+            if (form.role === "faculty" && !form.dept_id) {
+                throw new Error("Class is required for students")
+            }
+
+            if(mode === "add"){
+                const token = localStorage.getItem(StorageKey.TOKEN)
+
+                const res = await fetch(`${API_BASE_URL}${AUTH_API.REGISTER}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(form)
+                })
+
+                if (res.status === 401) {
+                    useAuth().logout()
+                    throw new Error("Unauthorized")
+                }
+
+                const data = await res.json()
+
+                if (!res.ok) throw new Error(data.message || "Something went wrong")
+
+                const status = data.status
+
+                if (status) {
+                    onSubmit(form)
+                } else {
+                    const message = data.message
+                    setError(message)
+                }
+            }else{
+                const updated_user =  await updateUser(form.id,form)
+
+                if(updated_user){
+                    const status = updated_user["status"]??false
+                    if(status){
+                        onSubmit(form)
+                    }else{
+                        setError(updated_user['message']??"")
+                    }
+                }
+            }
+
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogTrigger asChild/>
-            <DialogContent>
-                <DialogTitle className="sr-only"></DialogTitle>
+            <DialogContent className="max-h-[95vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
                         {mode === "add" ? "Add New User" : "Edit User"}
                     </DialogTitle>
                     <DialogDescription>
                         {mode === "add"
-                            ? "Create a new account for a student, faculty member, or admin."
-                            : "Update user details."
-                        }
-
+                            ? "Create a new account."
+                            : "Update user details."}
                     </DialogDescription>
                 </DialogHeader>
+                {error && (
+                    <div className=" p-3 text-sm text-red-600 bg-red-100 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
                 <div className="flex flex-col gap-4">
+
                     <div className="flex flex-col gap-2">
                         <Label>Full Name</Label>
-                        <Input value={user.name} onChange={(e) => setUser({ ...user, name: e.target.value })} placeholder="Enter full name" />
+                        <Input
+                            placeholder="Full Name"
+                            value={form.name}
+                            onChange={(e) =>
+                                setForm({ ...form, name: e.target.value })
+                            }
+                        />
                     </div>
+
                     <div className="flex flex-col gap-2">
                         <Label>Email</Label>
-                        <Input value={user.email} onChange={(e) => setUser({ ...user, email: e.target.value })} placeholder="user@university.edu" type="email" />
+                        <Input
+                            type="email"
+                            placeholder="Email address"
+                            value={form.email}
+                            onChange={(e) =>
+                                setForm({ ...form, email: e.target.value })
+                            }
+                        />
                     </div>
+
                     <div className="flex flex-col gap-2">
                         <Label>Phone</Label>
-                        <Input value={user.phone} onChange={(e) => setUser({ ...user, phone: e.target.value })} placeholder="+1-555-0000" />
+                        <Input
+                            type="phone"
+                            required
+                            placeholder="Phone"
+
+                            value={form.phone}
+                            onChange={(e) =>
+                                setForm({ ...form, phone: e.target.value })
+                            }
+                        />
                     </div>
+
                     <div className="grid grid-cols-2 gap-4">
+
                         <div className="flex flex-col gap-2">
                             <Label>Role</Label>
-                            <Select value={user.role} onValueChange={(v) => setUser({ ...user, role: v as Role })}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
+                            <Select
+                                name="role"
+                                value={form.role}
+                                onValueChange={(v) =>
+                                    setForm({ ...form, role: v as Role })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="faculty">Faculty</SelectItem>
@@ -410,41 +652,97 @@ function AddUpdateUser({
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="flex flex-col gap-2">
                             <Label>Department</Label>
-                            <Select value={user.department} onValueChange={(v) => setUser({ ...user, department: v })}>
-                                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                            <Select
+                                name="department"
+                                disabled={form.role === "admin"}
+                                required={form.role !== "admin"}
+                                value={form.dept_id}
+                                onValueChange={(v) => {
+                                    setSelectedDept(v)
+                                    setForm({
+                                        ...form,
+                                        dept_id: v,
+                                        class_id: ""
+                                    })
+                                }}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Department" />
+                                </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Computer Science">Computer Science</SelectItem>
-                                    <SelectItem value="Mathematics">Mathematics</SelectItem>
-                                    <SelectItem value="Physics">Physics</SelectItem>
+                                    {departments.map((d) => (
+                                        <SelectItem key={d.id} value={d.id}>
+                                            {d.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
                     </div>
-                    {user.role === "student" && (
+
+                    {form.role === "student" && (
                         <div className="flex flex-col gap-2">
                             <Label>Class</Label>
-                            <Select value={user.class} onValueChange={(v) => setUser({ ...user, class: v })}>
-                                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                            <Select
+                                name="class"
+                                required={form.role === "student"}
+                                value={form.class_id}
+                                onValueChange={(v) =>
+                                    setForm({ ...form, class_id: v })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Class" />
+                                </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="CS-301">CS-301</SelectItem>
-                                    <SelectItem value="CS-302">CS-302</SelectItem>
-                                    <SelectItem value="MA-201">MA-201</SelectItem>
-                                    <SelectItem value="PH-101">PH-101</SelectItem>
+                                    {filteredClasses.map((c) => (
+                                        <SelectItem key={c.id} value={c.id}>
+                                            {c.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
                     )}
+
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-transparent">Cancel</Button>
-                    <Button onClick={onSubmit} disabled={!user.name || !user.email}>{mode == 'edit' ? "Save Change" : "Add User"}</Button>
-                </DialogFooter>
+
+                <DialogFooter className="mt-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={!form.name || !form.email}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                {"Save..."}
+                            </>
+                        ) : (
+                            mode === "edit" ? "Save Changes" : "Add User"
+                        )}
+
+                    </Button>
+                </DialogFooter> 
+               
             </DialogContent>
         </Dialog>
-    );
-} 
+    )
+}
+
+
+
 
 
 

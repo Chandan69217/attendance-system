@@ -14,6 +14,8 @@ import { Department, User } from "@/lib/types"
 import { Building2, GraduationCap, Loader2, SquarePen, Trash2, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { getDepartments } from "@/service/dept.service"
+import { getFilterUsers } from "@/service/users.service"
 
 
 export function DepartmentManagement() {
@@ -27,40 +29,15 @@ export function DepartmentManagement() {
   const [departments,setDepartments] = useState<Department[]>([])
   const {logout} = useAuth()
 
-  const getUsers = async () => {
-    try {
-      setIsLoading(true)
-      const token = localStorage.getItem(StorageKey.TOKEN)
-
-      const res = await fetch(`${API_BASE_URL}${DEPT_API.GET_DEPT}`, {
-        method: "GET",
-        headers: {
-          "Content-type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      })
-
-      const data = await res.json()
-
-      if(res.status === 401){
-        logout()
-      }
-
-      if (!res.ok) {
-        throw new Error(data.detail || "Something went wrong")
-      }
-
-      setDepartments(data.data)
-
-    } catch (error: any) {
-      console.error(error.message)
-    }
+ 
+  const fetchDept = async ()=>{
+    setIsLoading(true)
+    setDepartments(await getDepartments())
     setIsLoading(false)
   }
 
-
   useEffect(() => {
-    getUsers()
+    fetchDept()
   }, [])
 
 
@@ -72,7 +49,7 @@ export function DepartmentManagement() {
 
     if (mode === "add") {
       try {
-        await getUsers()
+        await fetchDept()
         addToast({
           title: "Department Added",
           description: `${name} has been created.`,
@@ -88,7 +65,7 @@ export function DepartmentManagement() {
 
     if(mode === 'edit' && selectedDept){
 
-      await getUsers()
+      await fetchDept()
 
       addToast({
         title: "Department Updated",
@@ -141,7 +118,7 @@ export function DepartmentManagement() {
       }
 
       if (body.status) {
-        await getUsers()
+        await fetchDept()
         addToast({ title: "Department Removed", description: `${d?.name} has been deleted.`, variant: "destructive" })
       }
       
@@ -297,34 +274,10 @@ function AddUpdate({
   
 
   useEffect(()=>{
-    const getUsers = async () => {
-      try {
-        const token = localStorage.getItem(StorageKey.TOKEN)
-        
-        const res = await fetch(`${API_BASE_URL}${USER_API.FILTER_USER}?search=faculty`, {
-          method: "GET",
-          headers: {
-            "Content-type": 'application/json',
-            "Authorization": `Bearer ${token}`,
-          },
-        })
 
-        const data = await res.json()
-
-        if(res.status ===401){
-          logout()
-        }
-
-        if (!res.ok) {
-          throw new Error(data.detail || "Something went wrong")
-        }
-
-        setUsers(data.data)
-      } catch (error: any) {
-        console.error(error.message)
-      }
+    const getUsers = async ()=>{
+      setUsers(await getFilterUsers({ search: "faculty" }))
     }
-
     getUsers()
   },[])
 
@@ -454,8 +407,6 @@ function AddUpdate({
           console.error(body.message || "Update failed")
           return
         }
-
-        // console.log({"Message" : body.message})
 
         if (body.status) {
           onSubmit(form)
