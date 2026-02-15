@@ -14,6 +14,31 @@ export interface User {
   phone?: string
   join_date?: string
   status?: UserStatus
+  session_id?:string
+}
+
+export interface AppSettings {
+  confidence_threshold: number
+  late_threshold: number
+  max_check_in_distance: number
+
+  allow_student_self_attendance: boolean
+  require_faculty_verification: boolean
+
+  send_absent_notifications: boolean
+  email_notifications: boolean
+  low_attendance_alerts: boolean
+  daily_reports: boolean
+
+  min_attendance_percent: number
+
+  semester_start: string
+  semester_end: string
+
+  holidays: string[] 
+
+  latitude: number
+  longitude: number
 }
 
 
@@ -93,8 +118,9 @@ export interface Department {
 export interface AcademicSession {
   id: string
   name: string
-  startDate: string
-  endDate: string
+  start_date: string
+  end_date: string
+  student_count:string
   status: "active" | "upcoming" | "completed"
 }
 

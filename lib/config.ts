@@ -32,3 +32,20 @@ export const CLASS_API={
     "UPDATE": process.env.NEXT_PUBLIC_UPDATE_CLASS,
     "DELETE": process.env.NEXT_PUBLIC_DELETE_CLASS,
 }
+
+
+export const SETTINGS_API={
+    "SAVE": process.env.NEXT_PUBLIC_SAVE_SETTINGS,
+    "GET": process.env.NEXT_PUBLIC_GET_SETTINGS
+}
+
+export const ACADEMIC_API={
+    "ACADEMIC": process.env.NEXT_PUBLIC_ACADEMIC
+}
+
+export const SESSION_API = {
+    "CREATE": process.env.NEXT_PUBLIC_CREATE_SESSION,
+    "GET": process.env.NEXT_PUBLIC_GET_SESSION,
+    "UPDATE": process.env.NEXT_PUBLIC_UPDATE_SESSION,
+    "DELETE": process.env.NEXT_PUBLIC_DELETE_SESSION,
+}

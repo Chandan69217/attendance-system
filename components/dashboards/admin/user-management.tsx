@@ -2,7 +2,7 @@
 
 import { useAppState } from "@/lib/app-state"
 import { useEffect, useState } from "react"
-import { Class, Department, Role, User,UserStatus} from "@/lib/types"
+import { AcademicSession, Class, Department, Role, User,UserStatus} from "@/lib/types"
 import { DialogFooter, Dialog, DialogTrigger, DialogHeader, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { UserX2, UserPen, Users, GraduationCap, Search, UserPlus, Trash2, CheckCircle2, Eye, Building2, CalendarDays, Ban, RotateCcw, Mail, Phone, Loader2, } from "lucide-react"
@@ -22,6 +22,7 @@ import { useAuth } from "@/lib/auth-context"
 import { formatDateTime } from "@/lib/utils"
 import { getDepartments } from "@/service/dept.service"
 import { getClasses } from "@/service/classes.service"
+import { getSessions } from "@/service/session.service"
 
 
 
@@ -472,7 +473,7 @@ function AddUpdateUser({
     const [error,setError]= useState<string>()
     const [isLoading,setIsLoading]= useState(false)
     const [form,setForm] = useState<User>(user)
-
+    const [sessions,setSessions] = useState<AcademicSession[]>([])
  
     useEffect(() => {
         setForm(user)
@@ -485,6 +486,7 @@ function AddUpdateUser({
             try {
                 const deptData = await getDepartments()
                 const classData = await getClasses()
+                setSessions(await getSessions({status:"active"}) ?? [])
 
                 setDepartments(deptData)
                 setClasses(classData)
@@ -494,6 +496,7 @@ function AddUpdateUser({
         }
         loadData()
     }, [])
+
 
     const filteredClasses =
         selectedDept
@@ -570,6 +573,7 @@ function AddUpdateUser({
             setError(err.message)
         } finally {
             setIsLoading(false)
+            setForm({id:"",email:"",name:"",role:"student",avatar:"",session_id:"",class_id:"",dept_id:"",phone:"",status:"active",class:"",department:"",join_date:""})
         }
     }
 
@@ -685,6 +689,7 @@ function AddUpdateUser({
                     </div>
 
                     {form.role === "student" && (
+                        <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
                             <Label>Class</Label>
                             <Select
@@ -706,6 +711,33 @@ function AddUpdateUser({
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                         <div className="flex flex-col gap-2">
+                            <Label>Session</Label>
+                            <Select
+                                name="session"
+                                value={form.session_id}
+                                onValueChange={(v) => {
+                                    setForm({
+                                        ...form,
+                                        session_id: v,
+                                    })
+                                }}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Session" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {sessions.map((d) => (
+                                        <SelectItem key={d.id} value={d.id}>
+                                            {d.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         </div>
                     )}
 
