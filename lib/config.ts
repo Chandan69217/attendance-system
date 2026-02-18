@@ -49,3 +49,8 @@ export const SESSION_API = {
     "UPDATE": process.env.NEXT_PUBLIC_UPDATE_SESSION,
     "DELETE": process.env.NEXT_PUBLIC_DELETE_SESSION,
 }
+
+
+export const WEBSOCKET_API={
+    "FACE_RECOGNITION": process.env.NEXT_PUBLIC_WS_FACE_RECOGNITION
+}

@@ -322,7 +322,7 @@ export function UserManagement() {
                                             </div>
                                         </TableCell>
                                         <TableCell><Badge variant="secondary" className="capitalize">{user.role}</Badge></TableCell>
-                                        <TableCell className="text-sm">{user.department??"N/A"}</TableCell>
+                                        <TableCell className="text-sm">{user.department??"---"}</TableCell>
                                         <TableCell>
                                             <Badge className={user.status === "active" ? "bg-primary/15 text-primary border-primary/20" : user.status === "suspended" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
                                                 {user.status?.charAt(0).toUpperCase()}{user.status?.slice(1)}

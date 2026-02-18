@@ -15,6 +15,7 @@ export interface User {
   join_date?: string
   status?: UserStatus
   session_id?:string
+  face_id?: number[]
 }
 
 export interface AppSettings {
@@ -39,6 +40,8 @@ export interface AppSettings {
 
   latitude: number
   longitude: number
+
+  check_in: string
 }
 
 

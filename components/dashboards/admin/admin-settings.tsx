@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { LocationPicker } from "@/components/ui/location-picker"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import TimePicker from "@/components/ui/time-picker"
 import { useAppState } from "@/lib/app-state"
 import { useAuth } from "@/lib/auth-context"
 import { API_BASE_URL, SETTINGS_API } from "@/lib/config"
@@ -40,7 +41,10 @@ const defaultSettings: AppSettings = {
 
     latitude: 0,
     longitude: 0,
+    check_in:"10:00 AM"
 }
+
+
 
 
 export function AdminSettings() {
@@ -51,6 +55,8 @@ export function AdminSettings() {
 
     const handleSave = async (section: string) => {
         try {
+
+           
             toggle_loading(section)
 
             const token = localStorage.getItem(StorageKey.TOKEN)
@@ -170,6 +176,7 @@ export function AdminSettings() {
         getSettings()
     }, [])
 
+
     return (
         <div className="flex flex-col gap-6">
             <div>
@@ -186,7 +193,23 @@ export function AdminSettings() {
                             <CardHeader><CardTitle className="text-base">Recognition Settings</CardTitle><CardDescription>Configure face recognition parameters</CardDescription></CardHeader>
                             <CardContent className="flex flex-col gap-4">
                                 <div className="flex flex-col gap-2"><Label>Confidence Threshold (%)</Label><Input min={0} max={100}type="number" value={settings.confidence_threshold} onChange={(e) => updateSetting("confidence_threshold", Number(e.target.value))} /><p className="text-xs text-muted-foreground">Minimum confidence for face matching</p></div>
-                                <div className="flex flex-col gap-2"><Label>Late Threshold (minutes)</Label><Input min={0} type="number" value={settings.late_threshold} onChange={(e) => updateSetting("late_threshold", Number(e.target.value))} /><p className="text-xs text-muted-foreground">Minutes after class start to mark as late</p></div>
+                                <div className="flex flex-col gap-2">
+                                   <div className="flex flex-row gap-4">
+                                        <TimePicker
+                                            label="Check In Time"
+                                            value={settings.check_in??""}
+                                            onChange={(e) => {
+                                                updateSetting("check_in", e)
+                                            }}
+                                            name="check_in"
+                                            required
+                                        />
+                                    <div>
+                                            <Label>Late Threshold (minutes)</Label>
+                                            <Input min={0} type="number" value={settings.late_threshold} onChange={(e) => updateSetting("late_threshold", Number(e.target.value))} />
+                                    </div>
+                                   </div>
+                                    <p className="text-xs text-muted-foreground">Minutes after class start to mark as late</p></div>
                                 <div className="flex flex-col gap-2"><Label>Max Self Check-In Distance (m)</Label><Input min={0} type="number" value={settings.max_check_in_distance} onChange={(e) => updateSetting("max_check_in_distance", Number(e.target.value))} /><p className="text-xs text-muted-foreground">Geofencing radius for self-attendance</p></div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-2">

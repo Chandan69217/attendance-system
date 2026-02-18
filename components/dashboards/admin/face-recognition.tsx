@@ -1,135 +1,28 @@
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { useAppState } from "@/lib/app-state";
-// import { Badge, Camera, CheckCircle2, Video, XCircle } from "lucide-react";
-// import { useState } from "react";
-
-// export function FaceRecognition() {
-//   const { attendance, setAttendance, addToast } = useAppState()
-//   const [isActive, setIsActive] = useState(false)
-//   const [selectedClass, setSelectedClass] = useState("cs301")
-//   const [recognizedStudents, setRecognizedStudents] = useState<{ name: string; id: string; status: "recognized" | "unrecognized" }[]>([])
-
-//   const startSession = () => {
-//     setIsActive(true)
-//     setRecognizedStudents([])
-//     const students = [
-//       { name: "Alex Thompson", id: "S001", status: "recognized" as const },
-//       { name: "Maria Garcia", id: "S002", status: "recognized" as const },
-//       { name: "Unknown", id: "---", status: "unrecognized" as const },
-//       { name: "David Kim", id: "S005", status: "recognized" as const },
-//     ]
-//     students.forEach((s, i) => {
-//       setTimeout(() => setRecognizedStudents((prev) => [...prev, s]), (i + 1) * 1500)
-//     })
-//   }
-
-//   const stopSession = () => {
-//     setIsActive(false)
-//     const recognized = recognizedStudents.filter((s) => s.status === "recognized")
-//     recognized.forEach((s) => {
-//       const exists = attendance.find((a) => a.studentId === s.id && a.date === "2026-02-06" && a.subject === "Data Structures")
-//       if (!exists) {
-//         setAttendance((prev) => [...prev, {
-//           id: `AT${Date.now()}-${s.id}`,
-//           studentId: s.id,
-//           studentName: s.name,
-//           date: "2026-02-06",
-//           status: "present",
-//           subject: "Data Structures",
-//           markedBy: "F001",
-//           method: "face-recognition",
-//         }])
-//       }
-//     })
-//     addToast({ title: "Session Complete", description: `${recognized.length} students marked present via face recognition.`, variant: "success" })
-//   }
-
-//   return (
-//     <div className="flex flex-col gap-6">
-//       <div className="flex items-center justify-between">
-//         <div><h3 className="text-lg font-semibold text-foreground">Mark Class Attendance</h3><p className="text-sm text-muted-foreground">Use face recognition to mark student attendance</p></div>
-//         <Select value={selectedClass} onValueChange={setSelectedClass}>
-//           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-//           <SelectContent>
-//             <SelectItem value="cs301">CS-301</SelectItem>
-//             <SelectItem value="cs302">CS-302</SelectItem>
-//             <SelectItem value="ma201">MA-201</SelectItem>
-//           </SelectContent>
-//         </Select>
-//       </div>
-//       <div className="grid gap-6 lg:grid-cols-5">
-//         <Card className="lg:col-span-3">
-//           <CardContent className="p-0">
-//             <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-lg bg-foreground/5">
-//               {isActive ? (
-//                 <div className="flex flex-col items-center gap-3">
-//                   <div className="relative"><Video className="h-16 w-16 animate-pulse text-primary" /><div className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-destructive" /></div>
-//                   <p className="text-sm font-medium text-foreground">Camera Active - Scanning Faces</p>
-//                   <p className="text-xs text-muted-foreground">{recognizedStudents.filter((s) => s.status === "recognized").length} students recognized</p>
-//                 </div>
-//               ) : (
-//                 <div className="flex flex-col items-center gap-3"><Camera className="h-16 w-16 text-muted-foreground" /><p className="text-sm text-muted-foreground">Camera is not active</p></div>
-//               )}
-//             </div>
-//             <div className="flex gap-2 p-4">
-//               {!isActive ? (
-//                 <Button onClick={startSession} className="gap-2"><Camera className="h-4 w-4" />Start Session</Button>
-//               ) : (
-//                 <Button variant="destructive" onClick={stopSession} className="gap-2"><XCircle className="h-4 w-4" />Stop & Save</Button>
-//               )}
-//             </div>
-//           </CardContent>
-//         </Card>
-//         <Card className="lg:col-span-2">
-//           <CardHeader className="pb-3"><CardTitle className="text-base">Detection Log</CardTitle><CardDescription>Real-time recognition results</CardDescription></CardHeader>
-//           <CardContent>
-//             <div className="flex flex-col gap-2">
-//               {recognizedStudents.length === 0 ? (
-//                 <p className="py-8 text-center text-sm text-muted-foreground">No detections yet. Start the camera session.</p>
-//               ) : recognizedStudents.map((student, i) => (
-//                 <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-3">
-//                   {student.status === "recognized" ? <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" /> : <XCircle className="h-5 w-5 shrink-0 text-destructive" />}
-//                   <div className="flex-1"><p className="text-sm font-medium text-card-foreground">{student.name}</p><p className="text-xs text-muted-foreground">ID: {student.id}</p></div>
-//                   <Badge className={student.status === "recognized" ? "bg-primary/15 text-primary border-primary/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
-//                     {student.status === "recognized" ? "Marked" : "Unknown"}
-//                   </Badge>
-//                 </div>
-//               ))}
-//             </div>
-//           </CardContent>
-//         </Card>
-//       </div>
-//     </div>
-//   )
-// }
-
+"use client"
 
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { useAppState } from "@/lib/app-state";
 import { User } from "@/lib/types";
-import {  Camera, CheckCircle2, Search, Video, XCircle } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import {  Camera, CheckCircle2, Loader2, Search,  XCircle } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import { useFaceDetection } from "@/hooks/useFaceDetection";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { getFilterUsers } from "@/service/users.service";
+import { API_BASE_URL, WEBSOCKET_API } from "@/lib/config";
+
 
 export function FaceRecognition() {
 
-  const [selectedClass, setSelectedClass] = useState("cs301")
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [isCameraOn, setIsCameraOn] = useState(false)
-  const [face, setFaces] = useState<
-    { id: string; image: string; status: "pending" | "saved" }
-  >()
-
-  const { users, addToast, facultyAttendance, } = useAppState()
+  const { addToast } = useAppState()
+  const [users,setUsers] = useState<User[]>([])
+  const [userLoading,setUserLoading] = useState<boolean>(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showOverlay, setShowOverlay] = useState(false)
   const wrapperRef = React.useRef<HTMLDivElement>(null)
@@ -140,6 +33,105 @@ export function FaceRecognition() {
   const [selectedUser, setSelectedUser] = useState<User>()
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const captureCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [recognizedLog, setRecognizedLog] = useState<{ name: string; id: string; status: "Sending" | "Error" }[]>([])
+  const [isFaceMatched,setFaceMatched] = useState(false)
+  const hasTriggeredRef = useRef(false)
+
+  // Load Users
+useEffect(()=>{
+  const loadUsers = async ()=>{
+    setUsers(await getFilterUsers())
+    setUserLoading(false)
+  }
+  loadUsers()
+  return () => {
+    stopCamera();
+  };
+},[])  
+
+///////////// Face Recognition Code //////////////
+
+
+  const handleMessage = useCallback((data: any) => {
+    console.log({"Socket Response message:":data})
+   
+    const timestamp = Date.now();
+
+    setRecognizedLog((prev) => [
+      ...prev.slice(-3),
+      {
+        id: data.message,
+        name: data.data?.name ?? "Recognizing",
+        status: data.status ? "Sending" : "Error",
+      },
+    ]);
+
+    if (data.status) {
+
+      if(data.data){
+        setFaceMatched(true)
+        setSelectedUser(data.data)
+        addToast({
+          title: "Face Detected",
+          description: `${data.message}`,
+          variant: "success",
+        });
+      }else{
+        addToast({
+          title: "Complete",
+          description: `${data.message}`,
+          variant: "success",
+        });
+        hasTriggeredRef.current = false
+        stopCamera()
+        stopDetection()
+      }
+    }else{
+      hasTriggeredRef.current = false
+    }
+
+   
+    
+    
+  }, [addToast, selectedUser,isFaceMatched]);
+
+
+  const { send, connected } = useWebSocket({
+    url: `${API_BASE_URL}${WEBSOCKET_API.FACE_RECOGNITION}`,
+    onMessage: handleMessage,
+    onClose : ()=>{
+      hasTriggeredRef.current=false
+    }
+  });
+
+
+  
+
+  const {startDetection,faceDetected,detections,stopDetection} = useFaceDetection(videoRef,canvasRef)
+
+
+  useEffect(() => {
+
+    if(!hasTriggeredRef.current){
+      console.log("has triggered called")
+      if (faceDetected && detections.length === 1) {
+        hasTriggeredRef.current = true
+        if (faceDetected) {
+          captureFace()
+        } 
+      }
+
+      if (detections.length > 1) {
+        setRecognizedLog([{
+          name: "Multiple Face Detected",
+          id: Date.now().toString(),
+          status: "Error"
+        }])
+      }
+    }
+  }, [faceDetected, detections,hasTriggeredRef])
+
 
   const startCamera = async () => {
     try {
@@ -153,7 +145,11 @@ export function FaceRecognition() {
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play()
         }
+
         setIsCameraOn(true)
+        hasTriggeredRef.current = false
+        startDetection()
+    
       }
     } catch (err) {
       console.error("Camera error:", err)
@@ -161,21 +157,41 @@ export function FaceRecognition() {
     }
   }
 
-
   const stopCamera = () => {
-    const video = videoRef.current
-    if (!video) return
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video) return;
 
-    const stream = video.srcObject as MediaStream
-    stream?.getTracks().forEach((t) => t.stop())
-    video.srcObject = null
-    setIsCameraOn(false)
-  }
+    const stream = video.srcObject as MediaStream;
+    stream?.getTracks().forEach((t) => t.stop());
+
+    video.srcObject = null;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+    stopDetection()
+    hasTriggeredRef.current=false
+    setIsCameraOn(false);
+    setFaceMatched(false)
+    setSelectedUser(undefined)
+  };
+
+
+
 
 
   const captureFace = () => {
+
+    if (!connected) return
+    if (!isCameraOn) return
+
     const video = videoRef.current
-    const canvas = canvasRef.current
+  
+    const canvas = captureCanvasRef.current
     if (!video || !canvas) return
 
     canvas.width = video.videoWidth
@@ -184,13 +200,26 @@ export function FaceRecognition() {
     const ctx = canvas.getContext("2d")
     ctx?.drawImage(video, 0, 0)
 
-    const image = canvas.toDataURL("image/png")
-    setCapturedImage(image)
+    const image = canvas.toDataURL("image/png",0.7)
+    const base64 = image.split(",")[1]
 
-    setFaces(
-      { id: `face-${Date.now()}`, image, status: "pending" },
-    )
-    stopCamera()
+    if(connected){
+      
+
+      const timestamp = Date.now();
+      setRecognizedLog((prev) => [
+        ...prev,
+        {
+          id: "start face recognition",
+          name: selectedUser?.name ?? "Recognizing",
+          status: "Sending",
+        },
+      ]);
+      send({ image: base64,
+        user_id: selectedUser?.id
+      })
+    }
+  
   }
 
 
@@ -203,6 +232,7 @@ export function FaceRecognition() {
   return (
     <div className="flex flex-col gap-6">
 
+      {/* serach card */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-5 sm:items-center">
         <div className="sm:col-span-3">
           <h3 className="text-lg font-semibold text-foreground">Face Recognition</h3>
@@ -262,9 +292,16 @@ export function FaceRecognition() {
                       </TableBody>
                     </Table>
                   ) : (
-                    <div className="py-6 text-center text-muted-foreground">
-                      No users found
-                    </div>
+                      <div className="py-6 text-center text-muted-foreground">
+                        {userLoading ? (
+                          <div className="flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          </div>
+                        ) : (
+                          "No users found"
+                        )}
+                      </div>
+
                   )}
 
                 </CardContent>
@@ -274,6 +311,7 @@ export function FaceRecognition() {
         </div>
       </div>
 
+          {/* selected user card */}
       <Card>
         <CardContent className="p-4 max-h-[100px]">
           {selectedUser ? (
@@ -309,7 +347,7 @@ export function FaceRecognition() {
 
                 <Badge className="rounded-md px-2 py-1 mt-2" variant={"secondary"}>
                   <p>
-                    Joined on {selectedUser.joinDate}
+                    Joined on {selectedUser.join_date}
                   </p>
                 </Badge>
 
@@ -325,9 +363,10 @@ export function FaceRecognition() {
 
       <div className="grid gap-6 lg:grid-cols-5">
 
+         {/* camera card  */}
         <Card className="lg:col-span-3">
           <CardContent className="p-0">
-            <div className="relative aspect-video min-h-[300px] overflow-hidden rounded-t-lg bg-black">
+            <div className="relative aspect-video  overflow-hidden rounded-t-lg bg-black">
               <video
                 ref={videoRef}
                 autoPlay
@@ -337,123 +376,85 @@ export function FaceRecognition() {
                   }`}
               />
 
+              <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+
               {!isCameraOn && (
                 <div className="flex h-full items-center justify-center">
                   <div className="flex flex-col items-center gap-3"><Camera className="h-16 w-16 text-muted-foreground" /><p className="text-sm text-muted-foreground">Camera is not active</p></div>
                 </div>
               )}
 
-              <canvas ref={canvasRef} className="hidden" />
+              <canvas ref={captureCanvasRef} className="hidden" />
+
             </div>
           </CardContent>
 
-          <div className="flex gap-2 p-4">
+          <div className="flex gap-2 p-4 justify-between">
             {!isCameraOn ? (
-              <Button onClick={startCamera} className="gap-2">
-                <Camera className="h-4 w-4" /> Start Camera
+              <Button disabled = {!connected}onClick={startCamera} className="gap-2">
+                <Camera className="h-4 w-4" /> Start Recognizing
               </Button>
             ) : (
               <>
-                <Button onClick={captureFace} className="gap-2">
+                {/* <Button onClick={captureFace} className="gap-2">
                   <CheckCircle2 className="h-4 w-4" /> Capture
-                </Button>
+                </Button> */}
                 <Button variant="destructive" onClick={stopCamera} className="gap-2">
-                  <XCircle className="h-4 w-4" /> Stop
+                  <XCircle className="h-4 w-4" /> Stop Recognizing
                 </Button>
               </>
             )}
+
+            {
+              isFaceMatched && (
+                <div className="gap-2 flex">
+                  <Button onClick={()=>{
+                    setFaceMatched(false)
+                    setSelectedUser(undefined)
+                    send({
+                      confirm:false
+                    })
+                    hasTriggeredRef.current = false
+                  }} variant={"outline"} className="gap-2">
+                    <XCircle className="h-4 w-4" /> Cancel
+                </Button>
+                  <Button variant="default" onClick={()=>{
+                    setFaceMatched(false)
+                    setSelectedUser(undefined)
+                    send({
+                      confirm:true
+                    })
+                  }} className="gap-2">
+                    <XCircle className="h-4 w-4" /> Confirm & Update
+                  </Button>
+                </div>
+              )
+            }
           </div>
         </Card>
 
+             {/* log details card */}
+         <Card className="lg:col-span-2">
+                  <CardHeader className="pb-3"><CardTitle className="text-base">Detection Log</CardTitle><CardDescription>Real-time recognition results</CardDescription></CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-2">
+                      {recognizedLog.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-muted-foreground">No detections yet. Start the camera session.</p>
+                      ) : recognizedLog.map((student, i) => (
+                        <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                          {student.status === "Sending" ? <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" /> : <XCircle className="h-5 w-5 shrink-0 text-destructive" />}
+                          <div className="flex-1"><p className="text-sm font-medium text-card-foreground">{student.name}</p><p className="text-xs text-muted-foreground">{student.id}</p></div>
+                          <Badge className={student.status === "Sending" ? "bg-primary/15 text-primary border-primary/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
+                            {student.status === "Sending" ? "success" : "Failed"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+          </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3"><CardTitle className="text-base">Detection Log</CardTitle><CardDescription>Real-time recognition results</CardDescription></CardHeader>
-          <CardContent >
-            {face === undefined ? (
-                <p className="py-24 text-center text-sm text-muted-foreground">
-                  No face captured yet
-                </p>
-            ) : (
-              <div
-                key={face.id}
-                className="flex flex-col items-center gap-3"
-              >
-                <img
-                  src={face.image}
-                  alt="Captured face"
-                  className="rounded-md object-cover max-h-[200px]"
-                />
-
-                <div className="flex flex-col flex-1 items-center">
-                  <p className="text-sm font-medium">Captured Face</p>
-                  <p className="text-xs text-muted-foreground">Ready to save</p>
-                </div>
-
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-
-                      // handle face capture
-
-                      setFaces(undefined)
-                      addToast({
-                        title: "Face Capture Successful",
-                        description: "The face has been captured and stored successfully.",
-                        variant: "success",
-                      })
-                    }
-
-                    }
-                  >
-                    Save
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setFaces(undefined)
-                      startCamera()
-                    }
-
-                    }
-                  >
-                    Retake
-                  </Button>
-                </div>
-              </div>
-            )}
-
-          </CardContent>
-        </Card>
       </div>
 
     </div>
   )
 }
-
-
-
-// <Card className="lg:col-span-3">
-//   <CardContent className="p-0">
-//     <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-lg bg-foreground/5">
-//       {isActive ? (
-//         <div className="flex flex-col items-center gap-3">
-//           <div className="relative"><Video className="h-16 w-16 animate-pulse text-primary" /><div className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-destructive" /></div>
-//           <p className="text-sm font-medium text-foreground">Camera Active - Scanning Faces</p>
-//           <p className="text-xs text-muted-foreground">{recognizedStudents.filter((s) => s.status === "recognized").length} students recognized</p>
-//         </div>
-//       ) : (
-//         <div className="flex flex-col items-center gap-3"><Camera className="h-16 w-16 text-muted-foreground" /><p className="text-sm text-muted-foreground">Camera is not active</p></div>
-//       )}
-//     </div>
-//     <div className="flex gap-2 p-4">
-//       {!isActive ? (
-//         <Button onClick={startSession} className="gap-2"><Camera className="h-4 w-4" />Start Session</Button>
-//       ) : (
-//         <Button variant="destructive" onClick={stopSession} className="gap-2"><XCircle className="h-4 w-4" />Stop & Save</Button>
-//       )}
-//     </div>
-//   </CardContent>
-// </Card>
