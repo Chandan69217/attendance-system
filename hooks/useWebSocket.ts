@@ -32,7 +32,6 @@ export function useWebSocket({ url, onMessage,autoReconnect=true,onClose }: UseW
 
             ws.onmessage = (event) => {
                 try {
-                    console.log({"All Date From Hook":event.data})
                     const parsed = JSON.parse(event.data);
                     onMessage?.(parsed);
                 } catch {
@@ -67,7 +66,7 @@ export function useWebSocket({ url, onMessage,autoReconnect=true,onClose }: UseW
 
             wsRef.current?.close(1000);
         };
-    }, [url]);
+    }, [url,autoReconnect]);
 
     const send = (data: any) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {

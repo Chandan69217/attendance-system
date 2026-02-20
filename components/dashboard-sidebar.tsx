@@ -21,6 +21,7 @@ import {
   Camera, FileText, Calendar, Send, ScanFace, User, LogOut, Fingerprint,
   Building2, CalendarDays, ShieldCheck,School,
   CalendarCheck,
+  Book,
 } from "lucide-react"
 
 const adminNavItems = [
@@ -31,6 +32,7 @@ const adminNavItems = [
   { label: "Faculty Attendance", icon: CalendarCheck, id: "faculty-attendance-record" },
   { label: "Student Attendance", icon: ClipboardList, id: "attendance" },
   { label: "Departments", icon: Building2, id: "departments" },
+  { label: "Subjects", icon: Book, id: "subject" },
   { label: "Classes", icon: School, id: "classes" },
   { label: "Academic Sessions", icon: CalendarDays, id: "sessions" },
   { label: "Academy Calendar", icon: Calendar, id: "academy-calendar" },

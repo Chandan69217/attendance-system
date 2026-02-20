@@ -35,9 +35,8 @@ export function useFaceDetection(
         if (!faceapi) return
 
         await loadModels()
-
+    
         if (recognitionInterval.current) return
-
         recognitionInterval.current = setInterval(async () => {
             if (!videoRef.current || !canvasRef.current) return
 

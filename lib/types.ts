@@ -15,6 +15,8 @@ export interface User {
   join_date?: string
   status?: UserStatus
   session_id?:string
+  subject_id?:string
+  subject_name?:string
   face_id?: number[]
 }
 
@@ -45,12 +47,21 @@ export interface AppSettings {
 }
 
 
+export interface Subject {
+  id:string,
+  faculty_count: number,
+  dept_name: string,
+  dept_id: string,
+  name: string
+}
+
 export interface UserUpdatePayload {
   name?: string
   email?: string
   role?: Role
   dept_id?: string
   class_id?: string
+  subject_id?: string
   avatar?: string
   phone?: string
   status?: UserStatus
@@ -69,16 +80,20 @@ export interface AttendanceRecord {
 
 export interface FacultyAttendance {
   id: string
-  facultyId: string
-  facultyName: string
+  faculty_id: string
+  faculty_name: string
   date: string
-  checkIn: string
-  checkOut?: string
+  check_in: string
+  check_out?: string
   status: "present" | "absent" | "late" | "on-leave"
-  verifiedBy?: string
-  verificationStatus: "pending" | "approved" | "rejected"
+  verify_by_id?: string
+  verify_by_name?:string
+  verification_status: "pending" | "approved" | "rejected"
   remarks?: string
 }
+
+
+
 
 export interface Assignment {
   id: string

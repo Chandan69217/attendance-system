@@ -1,9 +1,9 @@
 "use client"
 
-import React from "react"
+import React, { useEffect } from "react"
 import { useState } from "react"
 import { useAppState } from "@/lib/app-state"
-import { Card, CardContent,} from "@/components/ui/card"
+import { Card, CardContent, } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,47 +15,98 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { FacultyAttendance } from "@/lib/types"
+import { getFacultyAttendance, verifyFacultyAttendance } from "@/service/faculty-attendance.service"
+import { CircularLoader } from "@/components/ui/circular-loader"
 
 
 
 
 export function FacultyAttendanceVerification() {
-  const { facultyAttendance, setFacultyAttendance, addToast } = useAppState()
-  const [dateFilter, setDateFilter] = useState("2026-02-06")
+  const { addToast } = useAppState()
+  const [facultyAttendance, setFacultyAttendance] = useState<FacultyAttendance[]>([])
+  const today = new Date().toLocaleDateString("en-CA");
+  const [dateFilter, setDateFilter] = useState(today);
   const [statusFilter, setStatusFilter] = useState("all")
-
+  const [isLoading, setIsLoading] = useState(true)
+  const [isVerifyLoading, setVerifyIsLoading] = useState(false)
   const filteredRecords = facultyAttendance.filter((r) => {
+
     const matchesDate = r.date === dateFilter
-    const matchesStatus = statusFilter === "all" || r.verificationStatus === statusFilter
+    const matchesStatus = statusFilter === "all" || r.verification_status === statusFilter
     return matchesDate && matchesStatus
   })
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage 
+  const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
+  const paginatedRecords = filteredRecords.slice(startIndex, endIndex)
 
-  const paginatedRecords = filteredRecords.slice(startIndex,endIndex)
 
-  const handleVerify = (id: string, status: "approved" | "rejected") => {
-    setFacultyAttendance((prev) => prev.map((r) => r.id === id ? { ...r, verificationStatus: status, verifiedBy: "A001" } : r))
-    const record = facultyAttendance.find((r) => r.id === id)
+
+  useEffect(() => {
+    const load = async () => {
+      setFacultyAttendance(await getFacultyAttendance())
+      setIsLoading(false)
+    }
+    load()
+  }, [])
+
+  const handleVerify = async (id: string, status: "approved" | "rejected") => {
+    setVerifyIsLoading(true)
+    const record = await verifyFacultyAttendance(id, status)
+    if (record) {
+      
+      setFacultyAttendance((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, ...record } : item
+        )
+      )
+      addToast({
+        title: status === "approved" ? "Attendance Approved" : "Attendance Rejected",
+        description: `${record?.faculty_name}'s attendance has been ${status}.`,
+        variant: status === "approved" ? "success" : "destructive",
+      })
+    }
+    setVerifyIsLoading(false)
+  }
+
+  const handleBulkApprove = async () => {
+    setVerifyIsLoading(true)
+
+    const pendingIds = filteredRecords
+      .filter((r) => r.verification_status === "pending")
+      .map((r) => r.id)
+
+    const results = await Promise.all(
+      pendingIds.map((id) =>
+        verifyFacultyAttendance(id, "approved")
+      )
+    )
+
+    const updatedRecords = results.filter(Boolean)
+
+    setFacultyAttendance((prev) =>
+      prev.map((item) => {
+        const updated = updatedRecords.find((r) => r!.id === item.id)
+        return updated ? { ...item, ...updated } : item
+      })
+    )
+
     addToast({
-      title: status === "approved" ? "Attendance Approved" : "Attendance Rejected",
-      description: `${record?.facultyName}'s attendance has been ${status}.`,
-      variant: status === "approved" ? "success" : "destructive",
+      title: "Bulk Approved",
+      description: `${updatedRecords.length} records approved.`,
+      variant: "success"
     })
+
+    setVerifyIsLoading(false)
   }
 
-  const handleBulkApprove = () => {
-    const pendingIds = filteredRecords.filter((r) => r.verificationStatus === "pending").map((r) => r.id)
-    setFacultyAttendance((prev) => prev.map((r) => pendingIds.includes(r.id) ? { ...r, verificationStatus: "approved" as const, verifiedBy: "A001" } : r))
-    addToast({ title: "Bulk Approved", description: `${pendingIds.length} records approved.`, variant: "success" })
-  }
 
-  const pendingCount = facultyAttendance.filter((r) => r.verificationStatus === "pending").length
-  const approvedCount = filteredRecords.filter((r) => r.verificationStatus === "approved").length
+  const pendingCount = facultyAttendance.filter((r) => r.verification_status === "pending").length
+  const approvedCount = filteredRecords.filter((r) => r.verification_status === "approved").length
   const totalToday = filteredRecords.length
 
   return (
@@ -96,8 +147,8 @@ export function FacultyAttendanceVerification() {
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
-            {filteredRecords.some((r) => r.verificationStatus === "pending") && (
-              <Button onClick={handleBulkApprove} size="sm" className="gap-2">
+            {filteredRecords.some((r) => r.verification_status === "pending") && (
+              <Button disabled = {isVerifyLoading} onClick={handleBulkApprove} size="sm" className="gap-2">
                 <CheckCircle2 className="h-4 w-4" />Approve All Pending
               </Button>
             )}
@@ -120,52 +171,66 @@ export function FacultyAttendanceVerification() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRecords.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
-              ) : paginatedRecords.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.facultyName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{record.facultyName}</p>
-                        <p className="text-xs text-muted-foreground">{record.facultyId}</p>
+              {
+                isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6">
+                      <div className="flex justify-center">
+                        <CircularLoader />
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{record.checkIn || "---"}</TableCell>
-                  <TableCell className="text-sm">{record.checkOut || "---"}</TableCell>
-                  <TableCell>
-                    <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
-                      {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={record.verificationStatus === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verificationStatus === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
-                      {record.verificationStatus.charAt(0).toUpperCase() + record.verificationStatus.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {record.verificationStatus === "pending" ? (
-                      <div className="flex items-center justify-end gap-1">
-                        <Button size="sm" variant="ghost" className="h-8 gap-1 text-primary hover:text-primary" onClick={() => handleVerify(record.id, "approved")}>
-                          <CheckCircle2 className="h-4 w-4" />Approve
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" onClick={() => handleVerify(record.id, "rejected")}>
-                          <XCircle className="h-4 w-4" />Reject
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Verified</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+
+                  paginatedRecords.length === 0 ? (
+                    <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
+                  ) : paginatedRecords.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.faculty_name.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{record.faculty_name}</p>
+                            <p className="text-xs text-muted-foreground">{record.faculty_id}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{record.check_in || "---"}</TableCell>
+                      <TableCell className="text-sm">{record.check_out || "---"}</TableCell>
+                      <TableCell>
+                        <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
+                          {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={record.verification_status === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verification_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
+                          {record.verification_status.charAt(0).toUpperCase() + record.verification_status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {record.verification_status === "pending" ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button disabled = {isVerifyLoading}size="sm" variant="ghost" className="h-8 gap-1 text-primary hover:text-primary" onClick={() => handleVerify(record.id, "approved")}>
+                              <CheckCircle2 className="h-4 w-4" />Approve
+                            </Button>
+                            <Button disabled ={isVerifyLoading}size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" onClick={() => handleVerify(record.id, "rejected")}>
+                              <XCircle className="h-4 w-4" />Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Verified</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+
+                )
+              }
             </TableBody>
           </Table>
           {
-            paginatedRecords.length > 0 && 
+            (paginatedRecords.length > 0 && !isLoading) &&
             <Pagination className="my-4">
               <PaginationContent>
                 <PaginationItem>
@@ -179,23 +244,23 @@ export function FacultyAttendanceVerification() {
                   />
                 </PaginationItem>
 
-                  {Array.from({ length: totalPages }, (_, index) => {
-                    const page = index + 1
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          isActive={currentPage === page}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            setCurrentPage(page)
-                          }}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  })}
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const page = index + 1
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={currentPage === page}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setCurrentPage(page)
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                })}
 
                 <PaginationItem>
                   <PaginationNext
@@ -204,7 +269,7 @@ export function FacultyAttendanceVerification() {
                       e.preventDefault()
                       setCurrentPage((next) => Math.min(next + 1, totalPages))
                     }}
-                    className={currentPage === totalPages || currentPage === 0 ?"pointer-events-none opacity-50" :""}
+                    className={currentPage === totalPages || currentPage === 0 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
 

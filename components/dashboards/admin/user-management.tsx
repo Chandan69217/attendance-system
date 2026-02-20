@@ -2,7 +2,7 @@
 
 import { useAppState } from "@/lib/app-state"
 import { useEffect, useState } from "react"
-import { AcademicSession, Class, Department, Role, User,UserStatus} from "@/lib/types"
+import { AcademicSession, Class, Department, Role, Subject, User,UserStatus} from "@/lib/types"
 import { DialogFooter, Dialog, DialogTrigger, DialogHeader, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { UserX2, UserPen, Users, GraduationCap, Search, UserPlus, Trash2, CheckCircle2, Eye, Building2, CalendarDays, Ban, RotateCcw, Mail, Phone, Loader2, } from "lucide-react"
@@ -23,6 +23,7 @@ import { formatDateTime } from "@/lib/utils"
 import { getDepartments } from "@/service/dept.service"
 import { getClasses } from "@/service/classes.service"
 import { getSessions } from "@/service/session.service"
+import { getSubjects } from "@/service/subject.service"
 
 
 
@@ -34,7 +35,8 @@ const emptyUser: User = {
     role: "student",
     department: "",
     class: "",
-    phone: ""
+    phone: "",
+    session_id:""
 }
 
 
@@ -207,6 +209,17 @@ export function UserManagement() {
                 variant: "success"
             })
         }
+
+        setEditingUser({
+            id: "",
+            name: "",
+            email: "",
+            role: "student",
+            department: "",
+            class: "",
+            phone: "",
+            session_id: ""
+        })
 
     }
 
@@ -468,6 +481,7 @@ function AddUpdateUser({
 }: AddUpdateUserProps) {
 
     const [departments, setDepartments] = useState<Department[]>([])
+    const [subjects,setSubjects] = useState<Subject[]>([])
     const [classes, setClasses] = useState<Class[]>([])
     const [selectedDept, setSelectedDept] = useState<string | null>(null)
     const [error,setError]= useState<string>()
@@ -486,10 +500,12 @@ function AddUpdateUser({
             try {
                 const deptData = await getDepartments()
                 const classData = await getClasses()
+                const subjectData = await getSubjects()
                 setSessions(await getSessions({status:"active"}) ?? [])
 
                 setDepartments(deptData)
                 setClasses(classData)
+                setSubjects(subjectData)
             } catch (err: any) {
                 setError("Failed to load data")
             }
@@ -503,12 +519,18 @@ function AddUpdateUser({
             ? classes.filter((c) => c.dept_id === selectedDept)
             : []
 
+    const filteredSubjects =
+        selectedDept
+            ? subjects.filter((c) => c.dept_id === selectedDept)
+            : []
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+
+    const handleSubmit = async () => {
+  
         setError("")
         setIsLoading(true)
 
+        
         try {
 
             if (!form.name || !form.email) {
@@ -528,6 +550,7 @@ function AddUpdateUser({
             }
 
             if(mode === "add"){
+         
                 const token = localStorage.getItem(StorageKey.TOKEN)
 
                 const res = await fetch(`${API_BASE_URL}${AUTH_API.REGISTER}`, {
@@ -562,6 +585,7 @@ function AddUpdateUser({
                 if(updated_user){
                     const status = updated_user["status"]??false
                     if(status){
+                        setForm({ id: "", email: "", name: "", role: "student", avatar: "", session_id: "", class_id: "", dept_id: "", phone: "", status: "active", class: "", department: "", join_date: "" })
                         onSubmit(form)
                     }else{
                         setError(updated_user['message']??"")
@@ -573,7 +597,6 @@ function AddUpdateUser({
             setError(err.message)
         } finally {
             setIsLoading(false)
-            setForm({id:"",email:"",name:"",role:"student",avatar:"",session_id:"",class_id:"",dept_id:"",phone:"",status:"active",class:"",department:"",join_date:""})
         }
     }
 
@@ -687,7 +710,30 @@ function AddUpdateUser({
                         </div>
 
                     </div>
-
+                    {form.role === "faculty" &&(
+                        <div className="flex flex-col gap-2">
+                            <Label>Subject</Label>
+                            <Select
+                                name="class"
+                                required={form.role === "faculty"}
+                                value={form.subject_id}
+                                onValueChange={(v) =>
+                                    setForm({ ...form, subject_id: v })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Subject" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {filteredSubjects.map((s) => (
+                                        <SelectItem key={s.id} value={s.id}>
+                                            {s.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     {form.role === "student" && (
                         <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
@@ -753,7 +799,7 @@ function AddUpdateUser({
                     </Button>
 
                     <Button
-                        onClick={handleSubmit}
+                        onClick={()=>{handleSubmit()}}
                         disabled={!form.name || !form.email}
                     >
                         {isLoading ? (

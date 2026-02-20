@@ -62,7 +62,7 @@ useEffect(()=>{
       ...prev.slice(-3),
       {
         id: data.message,
-        name: data.data?.name ?? "Recognizing",
+        name: data.data?.name ?? Date.now().toString(),
         status: data.status ? "Sending" : "Error",
       },
     ]);
@@ -211,7 +211,7 @@ useEffect(()=>{
         ...prev,
         {
           id: "start face recognition",
-          name: selectedUser?.name ?? "Recognizing",
+          name: selectedUser?.name ?? Date.now().toString(),
           status: "Sending",
         },
       ]);

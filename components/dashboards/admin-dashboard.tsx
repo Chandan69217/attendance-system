@@ -13,6 +13,7 @@ import { SessionManagement } from "./admin/session-management"
 import { AdminOverview } from "./admin/admin-overview"
 import { ClassManagement } from "./admin/class-management"
 import { AcademyCalendar } from "../academy-calendar"
+import { SubjectManagement } from "./admin/subject-management"
 
 
 
@@ -26,6 +27,7 @@ const sectionTitles: Record<string, string> = {
   classes : "Class Management",
   "face-recognition": "Face Recognition",
   sessions: "Academic Sessions",
+  subject : "Manage Subject",
   "academy-calendar" : "Academy Calendar",
   notifications: "Notifications",
   reports: "Reports & Analytics",
@@ -43,6 +45,7 @@ export function AdminDashboard({ activeSection }: { activeSection: string }) {
     case "sessions": return <SessionManagement />
     case "notifications": return <AdminNotifications />
     case "reports": return <AdminReports />
+    case "subject" : return <SubjectManagement/>
     case "academy-calendar" : return <AcademyCalendar/>
     case "settings": return <AdminSettings />
     case "classes": return <ClassManagement/>
