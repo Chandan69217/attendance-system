@@ -1,6 +1,7 @@
 import { useAuth } from "@/lib/auth-context"
 import { API_BASE_URL, CLASS_API } from "@/lib/config"
 import { StorageKey } from "@/lib/constants"
+import { Class } from "@/lib/types"
 import { use } from "react"
 
 
@@ -49,6 +50,46 @@ export const getClasses = async (params?: {
     }
 }
 
+
+export const getFacultyClass = async (): Promise<Class[]> => {
+    try {
+        const token = localStorage.getItem("token");
+
+        let url = `${API_BASE_URL}${CLASS_API.FACULTY_CLASS}`
+
+        const response = await fetch(
+            url,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        if (response.status === 401) {
+            throw new Error("UNAUTHORIZED");
+        }
+
+        if (!response.ok) {
+            console.error("Failed to fetch faculty class");
+            return [];   
+        }
+
+        const data = await response.json();
+
+        if (data.status && data.data) {
+            return Array.isArray(data.data)
+                ? data.data
+                : [data.data]; 
+        }
+        return [];
+    } catch (error) {
+        console.error("Get faculty class error:", error);
+        return []; 
+    }
+};
 
 
 

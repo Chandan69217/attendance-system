@@ -47,11 +47,35 @@ export interface AppSettings {
 }
 
 
+
+
+export interface Lecture {
+  id:string,
+  subject_id:string,
+  subject_name:string,
+  faculty_id:string,
+  faculty_name:string
+  date:string,
+  start_time:string,
+  end_time:string,
+  class_id:string,
+  class_name:string,
+  status: 'scheduled' | 'active' | 'close',
+  create_at: string,
+  ended_at?:string,
+  started_at?:string,
+  updated_at?:string
+}
+
 export interface Subject {
   id:string,
   faculty_count: number,
   dept_name: string,
   dept_id: string,
+  class_id:string,
+  faculty_name:string,
+  start_time:string,
+  end_time:string,
   name: string
 }
 

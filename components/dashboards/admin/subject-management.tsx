@@ -8,34 +8,48 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import TimePicker from "@/components/ui/time-picker"
 import { useAppState } from "@/lib/app-state"
 import { useAuth } from "@/lib/auth-context"
 import { API_BASE_URL, SUBJECT_API } from "@/lib/config"
 import { StorageKey } from "@/lib/constants"
-import { Department, Subject } from "@/lib/types"
+import { formatTo12Hour } from "@/lib/format-to-12hours"
+import { Class, Department, Subject, User } from "@/lib/types"
+import { getClasses } from "@/service/classes.service"
 import { getDepartments } from "@/service/dept.service"
-import { getSubjects } from "@/service/subject.service" 
+import { getSubjects } from "@/service/subject.service"
+import { getFilterUsers } from "@/service/users.service"
+import { promises } from "dns"
 import { CalendarDays, GraduationCap, Loader2, SquarePen, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
+
+
 export function SubjectManagement() {
+
     const { addToast } = useAppState()
     const [isAddOpen, setIsAddOpen] = useState(false)
-    const [newSubject, setNewSubject] = useState({ name: "",dept_id: "" })
-    const [editingSubject, setEditiongSubject] = useState({ name: "",id:"",dept_id:"", })
+    const [newSubject, setNewSubject] = useState({ name: "", dept_id: "", class_id: "", start_time: "", end_time: "" })
+    const [editingSubject, setEditiongSubject] = useState({ name: "", id: "", dept_id: "", class_id: "", start_time: "", end_time: "" })
     const [isLoading, setIsLoading] = useState(false)
     const [Subjects, setSubjects] = useState<Subject[]>([])
-    const [mode , setMode] = useState("add")
-    const [btnLoading , setBtnLoading] = useState(false)
+    const [mode, setMode] = useState("add")
+    const [btnLoading, setBtnLoading] = useState(false)
     const [departments, setDepartments] = useState<Department[]>([])
-    const [selectedDept , setSelectedDept] = useState<string>("All")
+    const [classes, setClasses] = useState<Class[]>([])
+    const [selectedDept, setSelectedDept] = useState<string>("All")
 
-    useEffect(()=>{
-        const load = async ()=>{
-            setDepartments(await getDepartments())
-        } 
+    useEffect(() => {
+        const load = async () => {
+            const [classData, departmentData] = await Promise.all([
+                getClasses(),
+                getDepartments(),
+            ])
+            setDepartments(departmentData)
+            setClasses(classData)
+        }
         load()
-    },[])
+    }, [])
 
 
     const filteredSubjects =
@@ -43,14 +57,15 @@ export function SubjectManagement() {
             ? Subjects
             : Subjects.filter((c) => c.dept_id === selectedDept)
 
+    const filterClasses = mode === 'add' ? newSubject.dept_id ? classes.filter((f) => f.dept_id === newSubject.dept_id) : [] : editingSubject.dept_id ? classes.filter((f) => f.dept_id === editingSubject.dept_id) : []
 
-    const handleAdd = async() => {
-        // if ((!newSubject.name || !editingSubject.name) && (!newSubject.start_date || !editingSubject.start_date)) return
-        try{
+    const handleAdd = async () => {
+        
+        try {
             setBtnLoading(true)
             const token = localStorage.getItem(StorageKey.TOKEN)
-            if(mode==="add"){
-           
+            if (mode === "add") {
+
                 const res = await fetch(`${API_BASE_URL}${SUBJECT_API.CREATE}`, {
                     method: "POST",
                     headers: {
@@ -72,7 +87,7 @@ export function SubjectManagement() {
                 const status = data.status
 
                 if (status) {
-                    setNewSubject({ name: "", dept_id: "",})
+                    setNewSubject({ name: "", dept_id: "", class_id: "", start_time: "", end_time: "" })
                     setIsAddOpen(false)
                     await getSubjectData()
                     addToast({ title: "Subject Created", description: `${newSubject.name} has been added.`, variant: "success" })
@@ -81,7 +96,7 @@ export function SubjectManagement() {
                     console.log(message)
                     addToast({ title: "Error", description: message, variant: "destructive" })
                 }
-            }else if(mode === "edit"){
+            } else if (mode === "edit") {
                 const res = await fetch(`${API_BASE_URL}${SUBJECT_API.UPDATE}/${editingSubject.id}`, {
                     method: "PUT",
                     headers: {
@@ -102,7 +117,7 @@ export function SubjectManagement() {
                 const status = data.status
 
                 if (status) {
-                    setEditiongSubject({ name: "", dept_id: "",id:"" })
+                    setEditiongSubject({ id: "", name: "", dept_id: "", class_id: "", start_time: "", end_time: "" })
                     setIsAddOpen(false)
                     await getSubjectData()
                     addToast({ title: "Subject Updated", description: `${newSubject.name} has been added.`, variant: "success" })
@@ -112,13 +127,13 @@ export function SubjectManagement() {
                     addToast({ title: "Error", description: message, variant: "destructive" })
                 }
             }
-        }catch(error:any){
-            console.log({"error":error.message||"Something went wrong"})
-        }finally{
+        } catch (error: any) {
+            console.log({ "error": error.message || "Something went wrong" })
+        } finally {
             setBtnLoading(false)
             setIsAddOpen(false)
         }
-       
+
     }
 
     const handleDelete = async (id: string) => {
@@ -175,16 +190,16 @@ export function SubjectManagement() {
 
     const getSubjectData = async () => {
         setIsLoading(true)
-        setSubjects(await getSubjects()??[])
+        setSubjects(await getSubjects() ?? [])
         setIsLoading(false)
     }
 
     useEffect(() => {
-    
+
         getSubjectData()
     }, [])
 
-    
+
 
     return (
         <div className="flex flex-col gap-6">
@@ -204,11 +219,11 @@ export function SubjectManagement() {
 
                         }}
                     >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-60">
                             <SelectValue placeholder="Select Department" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="All"> All </SelectItem>
+                            <SelectItem value="All"> All Departments </SelectItem>
                             {departments.map((d) => (
                                 <SelectItem key={d.id} value={d.id}>
                                     {d.name}
@@ -223,8 +238,8 @@ export function SubjectManagement() {
 
                 </div>
 
-               
-               
+
+
             </div>
 
             <Dialog open={isAddOpen} onOpenChange={(v) => {
@@ -241,6 +256,27 @@ export function SubjectManagement() {
                                 setEditiongSubject({ ...editingSubject, name: e.target.value })
                         }} placeholder="subject name" /></div>
 
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <TimePicker
+                                label="Lecture Start Time"
+                                value={ mode === "add" ? newSubject.start_time ?? "": editingSubject.start_time??""}
+                                onChange={(e) => {
+                                    mode === "add" ? setNewSubject({...newSubject, start_time:e}) : setEditiongSubject({...editingSubject,start_time:e})
+                                }}
+                                name="start_time"
+                                required
+                            />
+
+                            <TimePicker
+                                label="Lecture End Time"
+                                value={mode === "add" ? newSubject.end_time ?? "" : editingSubject.end_time ?? ""}
+                                onChange={(e) => {
+                                    mode === "add" ? setNewSubject({ ...newSubject, end_time: e }) : setEditiongSubject({ ...editingSubject, end_time: e })
+                                }}
+                                name="end_time"
+                                required
+                            />
+                        </div>
                         <div className="flex flex-col gap-2">
                             <Label>Select Department</Label>
                             <Select
@@ -253,11 +289,35 @@ export function SubjectManagement() {
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Subject" />
+                                    <SelectValue placeholder="Select Department" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {
                                         departments.map((d) =>
+                                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                        )
+                                    }
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label>Select Class</Label>
+                            <Select
+                                value={mode === "add" ? newSubject.class_id : editingSubject.class_id}
+                                onValueChange={(e) => {
+
+                                    mode === "add" ? setNewSubject({ ...newSubject, class_id: e }) :
+                                        setEditiongSubject({ ...editingSubject, class_id: e })
+                                }
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Class" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {
+                                        filterClasses.map((d) =>
                                             <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                                         )
                                     }
@@ -292,8 +352,8 @@ export function SubjectManagement() {
                                         <div className="flex items-start justify-between">
                                             <CardTitle className="text-base">{Subject.name}</CardTitle>
                                             <div className="flex items-center gap-1">
-                                               
-                                                <Button variant="ghost" disabled={btnLoading} size="icon" className="h-7 w-7" onClick={() =>{
+
+                                                <Button variant="ghost" disabled={btnLoading} size="icon" className="h-7 w-7" onClick={() => {
                                                     setEditiongSubject(Subject)
                                                     setMode("edit")
                                                     setIsAddOpen(true)
@@ -305,8 +365,8 @@ export function SubjectManagement() {
                                     <CardContent>
                                         <div className="flex flex-row gap-4 justify-between items-end">
                                             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                                                {/* <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /><span>Start: {Subject.start_date}</span></div>
-                                                <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /><span>End: {Subject.end_date}</span></div> */}
+                                                <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /><span>Start: {formatTo12Hour(Subject.start_time)}</span></div>
+                                                <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /><span>End: {formatTo12Hour(Subject.end_time)}</span></div>
                                             </div>
 
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -320,11 +380,11 @@ export function SubjectManagement() {
                                 </Card>
                             ))
                         ) : (
-                                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                                    <GraduationCap className="h-10 w-10 mb-4 opacity-40" />
-                                    <p className="text-sm font-medium">No Subject found</p>
-                                    <p className="text-xs">Create one to get started</p>
-                                </div>
+                            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                                <GraduationCap className="h-10 w-10 mb-4 opacity-40" />
+                                <p className="text-sm font-medium">No Subject found</p>
+                                <p className="text-xs">Create one to get started</p>
+                            </div>
                         )
                     )
                 }

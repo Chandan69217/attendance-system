@@ -68,7 +68,7 @@ export function StudentMarkAttendance() {
       )}
 
       
-      <FaceAuthDialog selectedUser={user!} open={isMarking} onVerify={(v) => {
+      <FaceAuthDialog remarks = {""} selectedUser={user!} open={isMarking} onVerify={(v) => {
         if (v) {
           if (mode === 'in') {
             handleMarkAttendance()

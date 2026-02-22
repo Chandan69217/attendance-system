@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useEffect, useMemo } from "react"
+import React, { useEffect, useMemo, useRef } from "react"
 import { useState } from "react"
-import { Role, User } from "@/lib/types"
+import { FacultyAttendance, Role, User } from "@/lib/types"
 import { useAppState } from "@/lib/app-state"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,12 +21,16 @@ import { getMonthlyAttendanceChartData, getWeeklyAttendanceChartData } from "@/l
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Label } from "@/components/ui/label"
 import { SearchSelect } from "@/components/ui/search-select"
-
+import { getFacultyAttendance } from "@/service/faculty-attendance.service"
+import { getFilterUsers } from "@/service/users.service"
+import { CircularLoader } from "@/components/ui/circular-loader"
+import { exportToPdf } from "@/lib/export-pdf"
 
 
 export function FacultyAttendanceRecord() {
 
-    const { users, facultyAttendance, } = useAppState()
+    const [users, setUsers] = useState<User[]>([])
+    const [facultyAttendance, setFacultyAttendance] = useState<FacultyAttendance[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [showOverlay, setShowOverlay] = useState(false)
     const wrapperRef = React.useRef<HTMLDivElement>(null)
@@ -34,17 +38,21 @@ export function FacultyAttendanceRecord() {
     const [currentPage, setCurrentPage] = useState(1)
     const [fromDate, setFromDate] = useState<string>("")
     const [toDate, setToDate] = useState<string>("")
+    const [isLoading, setIsLoading] = useState(true)
+    const [isExportLoading,setExportLoading] = useState(false)
+    const weeklyChartRef = useRef<HTMLDivElement>(null)
+    const monthlyChartRef = useRef<HTMLDivElement>(null)
 
 
-
-    const filteredUsers = users.filter((u) => ((u.name.toLowerCase().includes(searchTerm.trim().toLowerCase())) ||
+    const filteredUsers = users.filter((u) => (u.name.toLowerCase().includes(searchTerm.trim().toLowerCase())) ||
         (u.email.toLowerCase().includes(searchTerm.trim().toLowerCase())) ||
-        (u.id.toLowerCase() === searchTerm.trim().toLowerCase())) && (u.role === "faculty")
+        (u.id.toLowerCase() === searchTerm.trim().toLowerCase())
     )
 
 
     const filterAttendance = facultyAttendance.filter((a) => {
-        if (selectedUser && a.facultyId !== selectedUser.id) return false
+
+        if (selectedUser && a.faculty_id !== selectedUser.id) return false
 
         if (fromDate && a.date < fromDate) return false
         if (toDate && a.date > toDate) return false
@@ -59,6 +67,30 @@ export function FacultyAttendanceRecord() {
     const endIndex = startIndex + itemsPerPage
     const paginatedAttendance = filterAttendance.slice(startIndex, endIndex)
 
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setIsLoading(true)
+
+                const [attendanceData, usersData] = await Promise.all([
+                    getFacultyAttendance(),
+                    getFilterUsers({ search: "faculty" })
+                ])
+
+                setFacultyAttendance(attendanceData)
+                setUsers(usersData)
+
+            } catch (error) {
+                console.error("Error loading data:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        load()
+    }, [])
+
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
@@ -69,6 +101,7 @@ export function FacultyAttendanceRecord() {
         document.addEventListener("mousedown", handleClickOutside)
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
+
 
     const weeklyAttendanceData = useMemo(() => {
         const today = new Date()
@@ -100,6 +133,36 @@ export function FacultyAttendanceRecord() {
     }
 
 
+    const handleExport = async () => {
+        const today = new Date()
+        const dateFilter = today.toISOString().split("T")[0]
+        setExportLoading(true)
+        await exportToPdf({
+            title: "Faculty Attendance Report",
+            fileName: `faculty-attendance-${dateFilter}.pdf`,
+            charts: [weeklyChartRef, monthlyChartRef],
+            tableHeaders: [
+                "Faculty",
+                "Date",
+                "Check In",
+                "Check Out",
+                "Status",
+                "remarks",
+                "Verification"
+            ],
+            tableData: filterAttendance,
+            mapRow: (r) => [
+                r.faculty_name,
+                r.date,
+                r.check_in,
+                r.check_out,
+                r.status,
+                r.remarks,
+                r.verification_status,
+            ],
+        })
+        setExportLoading(false)
+    }
 
     return (
         <div className="flex flex-col gap-6">
@@ -115,20 +178,21 @@ export function FacultyAttendanceRecord() {
                         hover:text-red-600
                         hover:border-red-100"
                     ><RotateCcw className="h-4 w-4 text-red-600" />Reset</Button>
-                    <Button variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export</Button>
+                    <Button onClick={handleExport} disabled={isExportLoading} variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export</Button>
                 </div>
             </div>
 
             <SearchSelect
-            onChange={setSearchTerm}
-            setShowOverlay={setShowOverlay}
-            onSelect={(e)=>{
-                setSearchTerm(e.name)
-                setShowOverlay(true)
-            }}
-            showOverlay={showOverlay}
-            users={filteredUsers}
-            value={searchTerm}
+                onChange={setSearchTerm}
+                setShowOverlay={setShowOverlay}
+                onSelect={(e) => {
+                    setSearchTerm(e.name)
+                    setSelectedUser(e as User)
+                    setShowOverlay(true)
+                }}
+                showOverlay={showOverlay}
+                users={filteredUsers}
+                value={searchTerm}
             />
             <Card>
                 <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -186,39 +250,49 @@ export function FacultyAttendanceRecord() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {paginatedAttendance.length === 0 ? (
-                                <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
-                            ) : paginatedAttendance.map((record) => (
-                                <TableRow key={record.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.facultyName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{record.facultyName}</p>
-                                                <p className="text-xs text-muted-foreground">{record.facultyId}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-sm">{record.date || "---"}</TableCell>
-                                    <TableCell className="text-sm">{record.checkIn || "---"}</TableCell>
-                                    <TableCell className="text-sm">{record.checkOut || "---"}</TableCell>
-                                    <TableCell>
-                                        <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
-                                            {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className={record.verificationStatus === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verificationStatus === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
-                                            {record.verificationStatus.charAt(0).toUpperCase() + record.verificationStatus.slice(1)}
-                                        </Badge>
-                                    </TableCell>
+                            {
+                                isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7}>
+                                            <CircularLoader />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    paginatedAttendance.length === 0 ? (
+                                        <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
+                                    ) : paginatedAttendance.map((record) => (
+                                        <TableRow key={record.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.faculty_name.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-foreground">{record.faculty_name}</p>
+                                                        <p className="text-xs text-muted-foreground">{record.faculty_id}</p>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm">{record.date || "---"}</TableCell>
+                                            <TableCell className="text-sm">{record.check_in || "---"}</TableCell>
+                                            <TableCell className="text-sm">{record.check_out || "---"}</TableCell>
+                                            <TableCell>
+                                                <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
+                                                    {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className={record.verification_status === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verification_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
+                                                    {record.verification_status.charAt(0).toUpperCase() + record.verification_status.slice(1)}
+                                                </Badge>
+                                            </TableCell>
 
-                                </TableRow>
-                            ))}
+                                        </TableRow>
+                                    ))
+                                )
+                            }
                         </TableBody>
                     </Table>
-                    {paginatedAttendance.length > 0 && <Pagination className="my-4">
+                    {(paginatedAttendance.length > 0 && !isLoading) && <Pagination className="my-4">
                         <PaginationContent>
 
                             <PaginationItem>
@@ -278,7 +352,7 @@ export function FacultyAttendanceRecord() {
                         <CardDescription>Present vs absent students this week</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-64">
+                        <div ref={weeklyChartRef} className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={weeklyAttendanceData}>
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -299,7 +373,7 @@ export function FacultyAttendanceRecord() {
                         <CardDescription>Average attendance percentage per month</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-64">
+                        <div ref={monthlyChartRef} className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={monthlyAttendanceData}>
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -314,61 +388,73 @@ export function FacultyAttendanceRecord() {
                 </Card>
             </div>
 
-          
+
 
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">Recent Attendance</CardTitle>
                     <CardDescription>Last recorded attendance entries</CardDescription>
                 </CardHeader>
-                    <CardContent className="p-0">
-                      <Table>
+                <CardContent className="p-0">
+                    <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Faculty</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Check In</TableHead>
-                            <TableHead>Check Out</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Remarks</TableHead>
-                            <TableHead>Verification</TableHead>
+                            <TableRow>
+                                <TableHead>Faculty</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Check In</TableHead>
+                                <TableHead>Check Out</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Remarks</TableHead>
+                                <TableHead>Verification</TableHead>
 
-                          </TableRow>
+                            </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filterAttendance.length === 0 ? (
-                            <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
-                          ) : filterAttendance.slice(0,6).map((record) => (
-                            <TableRow key={record.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.facultyName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
-                                  <div>
-                                    <p className="text-sm font-medium text-foreground">{record.facultyName}</p>
-                                    <p className="text-xs text-muted-foreground">{record.facultyId}</p>
-                                  </div>
-                                </div>
-                              </TableCell>
-                                  <TableCell className="text-sm">{record.date || "---"}</TableCell>
-                              <TableCell className="text-sm">{record.checkIn || "---"}</TableCell>
-                              <TableCell className="text-sm">{record.checkOut || "---"}</TableCell>
-                              <TableCell>
-                                <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
-                                  {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary" className={record.verificationStatus === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verificationStatus === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
-                                  {record.verificationStatus.charAt(0).toUpperCase() + record.verificationStatus.slice(1)}
-                                </Badge>
-                              </TableCell>
-                    
-                            </TableRow>
-                          ))}
+                            {
+                                isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7}>
+                                            <CircularLoader />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+
+                                    filterAttendance.length === 0 ? (
+                                        <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No records found</TableCell></TableRow>
+                                    ) : filterAttendance.slice(0, 6).map((record) => (
+                                        <TableRow key={record.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.faculty_name.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-foreground">{record.faculty_name}</p>
+                                                        <p className="text-xs text-muted-foreground">{record.faculty_id}</p>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm">{record.date || "---"}</TableCell>
+                                            <TableCell className="text-sm">{record.check_in || "---"}</TableCell>
+                                            <TableCell className="text-sm">{record.check_out || "---"}</TableCell>
+                                            <TableCell>
+                                                <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : record.status === "on-leave" ? "bg-accent/15 text-accent border-accent/20" : "bg-destructive/15 text-destructive"}>
+                                                    {record.status === "on-leave" ? "On Leave" : record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">{record.remarks ?? "---"}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className={record.verification_status === "approved" ? "bg-primary/15 text-primary border-primary/20" : record.verification_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-chart-3/15 text-chart-3 border-chart-3/20"}>
+                                                    {record.verification_status.charAt(0).toUpperCase() + record.verification_status.slice(1)}
+                                                </Badge>
+                                            </TableCell>
+
+                                        </TableRow>
+                                    ))
+
+                                )
+                            }
                         </TableBody>
-                      </Table>
-                    </CardContent>
+                    </Table>
+                </CardContent>
             </Card>
         </div>
     )
