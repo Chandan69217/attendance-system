@@ -17,6 +17,7 @@ interface FaceAuthDialogProps {
     onClose: (open: boolean) => void
     onVerify: (params: { status: boolean; message: string }) => void
     selectedUser: User
+    lecture_id?:string
     remarks:string
 }
 
@@ -27,6 +28,7 @@ export function FaceAuthDialog({
     onClose,
     onVerify,
     selectedUser,
+    lecture_id,
     remarks
 }: FaceAuthDialogProps) {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -49,11 +51,10 @@ export function FaceAuthDialog({
         }
 
         if (data.data && data.data.isMarked) {
-            const d = data.data;
 
             onVerify({
-                status: d.status ?? false,
-                message: d.message ?? ""
+                status: data.status ?? false,
+                message: data.message ?? ""
             });
 
             stopDetection();
@@ -190,7 +191,8 @@ export function FaceAuthDialog({
                 image: base64,
                 latitude,
                 longitude,
-                remarks
+                remarks,
+                "lecture_id": lecture_id??""
             });
 
         } catch (err) {

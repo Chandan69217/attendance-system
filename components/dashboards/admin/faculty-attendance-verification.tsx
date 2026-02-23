@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { FacultyAttendance } from "@/lib/types"
-import { getFacultyAttendance, verifyFacultyAttendance } from "@/service/faculty-attendance.service"
+import { getFacultyAttendance, verifyFacultyAttendance } from "@/service/attendance.service"
 import { CircularLoader } from "@/components/ui/circular-loader"
 
 

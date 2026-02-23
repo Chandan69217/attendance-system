@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useAppState } from "@/lib/app-state"
 import { Card, CardContent, } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,14 +10,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
    Download,
 } from "lucide-react"
-
+import { AttendanceRecord } from "@/lib/types"
+import { getStudentAttendance } from "@/service/attendance.service"
+import { useAuth } from "@/lib/auth-context"
 
 
 export function FacultyAttendanceRecords() {
-  const { attendance } = useAppState()
-  const [dateFilter, setDateFilter] = useState("2026-02-06")
-  const filteredRecords = attendance.filter((r) => r.date === dateFilter && r.markedBy === "F001")
+  const [ attendance,setAttendance ] = useState<AttendanceRecord[]>([])
+  const today = new Date().toLocaleDateString("en-CA");
+  const [dateFilter, setDateFilter] = useState(today)
+  const filteredRecords = attendance.filter((r) => r.date === dateFilter)
+  const [isLoading,setIsLoading] = useState(true)
+  const {user} = useAuth()
 
+  useEffect(()=>{
+    const getAttendance = async ()=>{
+      setAttendance(await getStudentAttendance(user?.id??''))
+      setIsLoading(false)
+    }
+    getAttendance()
+  },[])
+
+
+  
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -36,9 +51,9 @@ export function FacultyAttendanceRecords() {
                 <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">No records found for this date</TableCell></TableRow>
               ) : filteredRecords.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell className="font-mono text-sm">{record.studentId}</TableCell>
-                  <TableCell className="font-medium text-foreground">{record.studentName}</TableCell>
-                  <TableCell>{record.subject}</TableCell>
+                  <TableCell className="font-mono text-sm">{record.student_id}</TableCell>
+                  <TableCell className="font-medium text-foreground">{record.student_name}</TableCell>
+                  <TableCell>{record.subject_name}</TableCell>
                   <TableCell><Badge variant="secondary" className="text-xs capitalize">{record.method?.replace("-", " ") ?? "manual"}</Badge></TableCell>
                   <TableCell>
                     <Badge className={record.status === "present" ? "bg-primary/15 text-primary border-primary/20" : record.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>

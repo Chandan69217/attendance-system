@@ -17,13 +17,12 @@ import {
 import { useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FaceAuthDialog } from "@/components/face-recognition"
-import { getFacultyAttendance } from "@/service/faculty-attendance.service"
+import { getFacultyAttendance } from "@/service/attendance.service"
 import { CircularLoader } from "@/components/ui/circular-loader"
 import { LiveDateTime } from "@/lib/live-datetime"
 
 
 export function FacultySelfAttendance() {
-  const todayDate = new Date()
   const { user } = useAuth()
   const { addToast } = useAppState()
   const [myRecords, setMyRecord] = useState<FacultyAttendance[]>([])

@@ -60,7 +60,7 @@ export interface Lecture {
   end_time:string,
   class_id:string,
   class_name:string,
-  status: 'scheduled' | 'active' | 'close',
+  status: 'scheduled' | 'active' | 'closed',
   create_at: string,
   ended_at?:string,
   started_at?:string,
@@ -93,13 +93,16 @@ export interface UserUpdatePayload {
 
 export interface AttendanceRecord {
   id: string
-  studentId: string
-  studentName: string
+  student_id: string
+  student_name: string
   date: string
   status: "present" | "absent" | "late"
-  subject: string
-  markedBy: string
+  subject_id: string
+  subject_name:string
+  marked_by: string
+  marked_name:string
   method?: "face-recognition" | "manual" | "self-marked"
+  created_at:string
 }
 
 export interface FacultyAttendance {

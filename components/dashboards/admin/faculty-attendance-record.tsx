@@ -21,7 +21,7 @@ import { getMonthlyAttendanceChartData, getWeeklyAttendanceChartData } from "@/l
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Label } from "@/components/ui/label"
 import { SearchSelect } from "@/components/ui/search-select"
-import { getFacultyAttendance } from "@/service/faculty-attendance.service"
+import { getFacultyAttendance } from "@/service/attendance.service"
 import { getFilterUsers } from "@/service/users.service"
 import { CircularLoader } from "@/components/ui/circular-loader"
 import { exportToPdf } from "@/lib/export-pdf"

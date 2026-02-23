@@ -80,10 +80,10 @@ export function getSubjectAttendanceChartData(
   const subjectMap: Record<string, AttendanceRecord[]> = {}
 
   attendance.forEach((a) => {
-    if (!subjectMap[a.subject]) {
-      subjectMap[a.subject] = []
+    if (!subjectMap[a.subject_name]) {
+      subjectMap[a.subject_name] = []
     }
-    subjectMap[a.subject].push(a)
+    subjectMap[a.subject_name].push(a)
   })
 
   return Object.entries(subjectMap).map(([subject, records]) => {
@@ -108,12 +108,12 @@ export function getSubjectAttendanceSummary(
       { present: number; absent: number; late: number; total: number }
     >
   >((acc, a) => {
-    if (!acc[a.subject]) {
-      acc[a.subject] = { present: 0, absent: 0, late: 0, total: 0 }
+    if (!acc[a.subject_name]) {
+      acc[a.subject_name] = { present: 0, absent: 0, late: 0, total: 0 }
     }
 
-    acc[a.subject][a.status]++
-    acc[a.subject].total++
+    acc[a.subject_name][a.status]++
+    acc[a.subject_name].total++
 
     return acc
   }, {})

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect, useMemo } from "react"
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useAppState } from "@/lib/app-state"
@@ -9,6 +9,13 @@ import {
    BookOpen, Fingerprint, MapPin, CheckCircle2, ScanFace,
 } from "lucide-react"
 import { FaceAuthDialog } from "@/components/face-recognition"
+import { AttendanceRecord, Lecture } from "@/lib/types"
+import { getLecture } from "@/service/lecture.service"
+import { LiveDateTime } from "@/lib/live-datetime"
+import { CircularLoader } from "@/components/ui/circular-loader"
+import { formatDateTime } from "@/lib/utils"
+import { formatTo12Hour } from "@/lib/format-to-12hours"
+import { getStudentAttendance } from "@/service/attendance.service"
 
 
 
@@ -16,42 +23,47 @@ import { FaceAuthDialog } from "@/components/face-recognition"
 
 export function StudentMarkAttendance() {
   const { user } = useAuth()
-  const { attendance, setAttendance, addToast } = useAppState()
+  const { addToast } = useAppState()
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [isMarking, setIsMarking] = useState(false)
   const [selectedSubject, setSelectedSubject] = useState("")
   const [isMarked, setIsMarked] = useState(false)
-  const [markedSubjects, setMarkedSubjects] = useState<string[]>(() => {
-    const myToday = attendance.filter((a) => a.studentId === (user?.id ?? "S001") && a.date === "2026-02-06")
-    return myToday.map((a) => a.subject)
-  })
+  const [isLoading,setIsLoading] = useState(true)
+  const todayDate = new Date().toLocaleDateString("en-CA")
+  const [selectedLecture,setSelectedLecture] = useState<string>()
+  const markedSubjects = useMemo(() => {
+    return attendance
+      .filter(
+        (a) =>
+          a.student_id === (user?.id ?? "")
+      )
+      .map((a) => a.subject_id)
+  }, [attendance, user?.id, todayDate])
 
-  const [mode,setMode] = useState<'in'|'out'>('in')
 
-  const todayClasses = [
-    { id: "CL1", subject: "Data Structures", time: "09:00 AM - 10:00 AM", room: "Room 301", faculty: "Prof. James Carter" },
-    { id: "CL2", subject: "Algorithms", time: "10:30 AM - 11:30 AM", room: "Room 302", faculty: "Prof. James Carter" },
-    { id: "CL3", subject: "Linear Algebra", time: "02:00 PM - 03:00 PM", room: "Room 201", faculty: "Dr. Emily Chen" },
-  ]
+  const [todayClasses,setTodayClasses] = useState<Lecture[]>([])
 
-  const handleMarkAttendance = () => {
-    setTimeout(() => {
-      setIsMarking(false)
-      setIsMarked(true)
-      setMarkedSubjects((prev) => [...prev, selectedSubject])
-      setAttendance((prev) => [...prev, {
-        id: `AT${Date.now()}`,
-        studentId: user?.id ?? "S001",
-        studentName: user?.name ?? "Student",
-        date: "2026-02-06",
-        status: "present",
-        subject: selectedSubject,
-        markedBy: user?.id ?? "S001",
-        method: "self-marked",
-      }])
-      addToast({ title: "Attendance Marked", description: `Your attendance for ${selectedSubject} has been recorded.`, variant: "success" })
-      setTimeout(() => { setIsMarked(false); setSelectedSubject("") }, 2000)
-    }, 2500)
+  const getTodayLectures = async () => {
+    setIsLoading(true)
+    setAttendance(await getStudentAttendance(user?.id, todayDate))
+    setTodayClasses(await getLecture({ student_id: user?.id }))
+    setIsLoading(false)
+    
   }
+
+  useEffect(()=>{
+    
+     getTodayLectures()
+   
+  }, [])
+  
+  const handleMarkAttendance = async() => {
+    setIsMarking(false)
+    setIsMarked(true)
+    await getTodayLectures()
+    addToast({ title: "Attendance Marked", description: `Your attendance for ${selectedSubject} has been recorded.`, variant: "success" })
+  }
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -68,13 +80,19 @@ export function StudentMarkAttendance() {
       )}
 
       
-      <FaceAuthDialog remarks = {""} selectedUser={user!} open={isMarking} onVerify={(v) => {
-        if (v) {
-          if (mode === 'in') {
+      <FaceAuthDialog
+        remarks=""
+        selectedUser={user!}
+        open={isMarking}
+        lecture_id={selectedLecture}
+        onVerify={(v) => {
+          console.log(v)
+          if (v && v.status) {
             handleMarkAttendance()
           }
-        }
-      }} onClose={setIsMarked} />
+        }}
+        onClose={setIsMarking} 
+      />
 
       {isMarked && (
         <Card className="border-primary/30 bg-primary/[0.03]">
@@ -86,11 +104,13 @@ export function StudentMarkAttendance() {
       )}
 
       <Card>
-        <CardHeader><CardTitle className="text-base">{"Today's Classes"} - Feb 6, 2026</CardTitle><CardDescription>Tap the button to mark your attendance for each class</CardDescription></CardHeader>
+        <CardHeader><CardTitle className="text-base">{"Today's Classes"} - {<LiveDateTime/>}</CardTitle><CardDescription>Tap the button to mark your attendance for each class</CardDescription></CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-3">
+          {
+            isLoading? (<CircularLoader/>):(
+               <div className="flex flex-col gap-3">
             {todayClasses.map((cls) => {
-              const alreadyMarked = markedSubjects.includes(cls.subject)
+              const alreadyMarked = markedSubjects.includes(cls.subject_id)
               return (
                 <div key={cls.id} className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${alreadyMarked ? "border-primary/20 bg-primary/[0.02]" : "border-border"}`}>
                   <div className="flex items-center gap-4">
@@ -98,23 +118,45 @@ export function StudentMarkAttendance() {
                       <BookOpen className={`h-6 w-6 ${alreadyMarked ? "text-primary" : "text-muted-foreground"}`} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{cls.subject}</p>
-                      <p className="text-xs text-muted-foreground">{cls.time} | {cls.room}</p>
-                      <p className="text-xs text-muted-foreground">{cls.faculty}</p>
+                      <p className="text-sm font-semibold text-foreground">{cls.subject_name}</p>
+                      <p className="text-xs text-muted-foreground">{formatTo12Hour(cls.start_time)} | {cls.class_name}</p>
+                      <p className="text-xs text-muted-foreground">{cls.faculty_name}</p>
                     </div>
                   </div>
                   {alreadyMarked ? (
                     <Badge className="bg-primary/15 text-primary border-primary/20 self-start sm:self-auto"><CheckCircle2 className="mr-1 h-3 w-3" />Marked</Badge>
                   ) : (
                     <Button onClick={() => {
-                      setSelectedSubject(cls.subject);
-                      setIsMarking(true)
+                        if (cls.status === "scheduled") {
+                          addToast({
+                            title: "Attendance Not Marked",
+                            description: "Class is not started yet.",
+                            variant: "destructive"
+                          })
+                          return
+                        }
+
+                        if (cls.status === "closed") {
+                          addToast({
+                            title: "Attendance Not Marked",
+                            description: "Class is completed. You cannot mark attendance.",
+                            variant: "destructive"
+                          })
+                          return
+                        }
+
+                        setSelectedSubject(cls.subject_name);
+                        setSelectedLecture(cls.id)
+                        setIsMarking(true)
+
                     }} disabled={isMarking} className="gap-2 self-start sm:self-auto" size="sm"><Fingerprint className="h-4 w-4" />Mark Attendance</Button>
                   )}
                 </div>
               )
             })}
           </div>
+            )
+          }
         </CardContent>
       </Card>
 

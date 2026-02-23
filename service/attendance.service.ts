@@ -1,6 +1,6 @@
 import { useAuth } from "@/lib/auth-context";
 import { API_BASE_URL, ATTENDANCE_API } from "@/lib/config";
-import { FacultyAttendance } from "@/lib/types";
+import { AttendanceRecord, FacultyAttendance } from "@/lib/types";
 
 
 
@@ -48,6 +48,43 @@ export const getFacultyAttendance = async (
     }
 };
 
+
+export const getStudentAttendance = async (
+    student_id?: string,
+    date?: string
+): Promise<AttendanceRecord[]> => {
+    try {
+        const token = localStorage.getItem("token");
+
+        const params = new URLSearchParams();
+
+        if (student_id) params.append("student_id", student_id);
+        if (date) params.append("date", date);
+
+        const response = await fetch(
+            `${API_BASE_URL}${ATTENDANCE_API.STUDENT_ATTENDANCE}?${params.toString()}`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        const result: ApiResponse<AttendanceRecord[]> =
+            await response.json();
+
+        if (!result.status) {
+            throw new Error(result.message);
+        }
+
+        return result.data;
+    } catch (error: any) {
+        console.error("Faculty attendance fetch error:", error);
+        throw error;
+    }
+};
 
 
 
