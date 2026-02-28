@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAppState } from "@/lib/app-state"
 import { useAuth } from "@/lib/auth-context"
+import { StorageKey } from "@/lib/constants"
+import { updateUser } from "@/service/users.service"
 import { Save } from "lucide-react"
 import { useState } from "react"
 
@@ -12,8 +14,9 @@ import { useState } from "react"
 
 
 export function StudentProfile() {
-    const { user } = useAuth()
+    const { user,setUpdatedUser } = useAuth()
     const { addToast } = useAppState()
+    const [isLoading,setIsLoading] = useState(false)
     const [profileData, setProfileData] = useState({
         name: user?.name ?? "",
         email: user?.email ?? "",
@@ -23,9 +26,29 @@ export function StudentProfile() {
         id: user?.id ?? "",
     })
 
-    const handleSave = () => {
-        addToast({ title: "Profile Updated", description: "Your profile information has been saved.", variant: "success" })
+    const handleSave = async () => {
+        setIsLoading(true)
+        const data = await updateUser(user?.id??"",profileData)
+        setIsLoading(false)
+        if(data){
+            const storedUser = localStorage.getItem(StorageKey.USER)
+
+            if (storedUser) {
+            
+                const parsedUser = JSON.parse(storedUser)
+
+                const updated_user = {
+                    ...parsedUser,
+                    ...profileData
+                }
+                
+                setUpdatedUser(updated_user)
+            }
+
+           addToast({ title: "Profile Updated", description: "Your profile information has been saved.", variant: "success" })
+        }
     }
+
 
     return (
         <div className="flex flex-col gap-6">
@@ -45,7 +68,7 @@ export function StudentProfile() {
                                 <div className="flex flex-col gap-2"><Label>Department</Label><Input value={profileData.department} readOnly className="bg-muted" /></div>
                                 <div className="flex flex-col gap-2"><Label>Class</Label><Input value={profileData.class} readOnly className="bg-muted" /></div>
                             </div>
-                            <Button onClick={handleSave} className="gap-2 self-start"><Save className="h-4 w-4" />Save Changes</Button>
+                            <Button disabled= {isLoading} onClick={handleSave} className="gap-2 self-start"><Save className="h-4 w-4" />Save Changes</Button>
                         </div>
                     </div>
                 </CardContent>

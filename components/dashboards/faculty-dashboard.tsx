@@ -3,7 +3,7 @@
 import { AcademyCalendar } from "../academy-calendar"
 import { AttendanceCamera } from "./faculty/attendance-camera"
 import { FacultyAssignments } from "./faculty/faculty-assignments"
-import { FacultyAttendanceRecords } from "./faculty/faculty-attendance-record"
+import { FacultyClassAttendanceRecords } from "./faculty/faculty-class-attendance-record"
 import { FacultyExams } from "./faculty/faculty-exam"
 import { FacultyNotifications } from "./faculty/faculty-notification"
 import { FacultyOverview } from "./faculty/faculty-overview"
@@ -15,7 +15,7 @@ export function FacultyDashboard({ activeSection }: { activeSection: string }) {
   switch (activeSection) {
     case "my-attendance": return <FacultySelfAttendance />
     case "attendance-camera": return <AttendanceCamera />
-    case "attendance": return <FacultyAttendanceRecords />
+    case "attendance": return <FacultyClassAttendanceRecords />
     case "assignments": return <FacultyAssignments />
     case "exams": return <FacultyExams />
     case "academy-calendar" : return <AcademyCalendar/>

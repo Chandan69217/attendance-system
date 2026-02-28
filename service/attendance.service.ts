@@ -1,6 +1,6 @@
 import { useAuth } from "@/lib/auth-context";
 import { API_BASE_URL, ATTENDANCE_API } from "@/lib/config";
-import { AttendanceRecord, FacultyAttendance } from "@/lib/types";
+import { AttendanceRecord, FacultyAttendance, SubjectAttendance } from "@/lib/types";
 
 
 
@@ -81,12 +81,42 @@ export const getStudentAttendance = async (
 
         return result.data;
     } catch (error: any) {
-        console.error("Faculty attendance fetch error:", error);
+        console.error("Student attendance fetch error:", error);
         throw error;
     }
 };
 
 
+export const getAttendanceBySubject = async (): Promise<SubjectAttendance[]> => {
+    try {
+        const token = localStorage.getItem("token");
+
+        const params = new URLSearchParams();
+
+        const response = await fetch(
+            `${API_BASE_URL}${ATTENDANCE_API.SUBJECT_ATTENDANCE}`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        const result: ApiResponse<SubjectAttendance[]> =
+            await response.json();
+
+        if (!result.status) {
+            throw new Error(result.message);
+        }
+
+        return result.data;
+    } catch (error: any) {
+        console.error("Subject attendance fetch error:", error);
+        throw error;
+    }
+};
 
 export const verifyFacultyAttendance = async (
     id: string,
@@ -130,3 +160,41 @@ export const verifyFacultyAttendance = async (
         throw error;
     }
 }
+
+
+
+
+export const getClassAttendance = async (
+    date?: string
+): Promise<AttendanceRecord[]> => {
+    try {
+        const token = localStorage.getItem("token");
+
+        const params = new URLSearchParams();
+
+        if (date) params.append("date", date);
+
+        const response = await fetch(
+            `${API_BASE_URL}${ATTENDANCE_API.CLASS_ATTENDANCE}?${params.toString()}`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        const result: ApiResponse<AttendanceRecord[]> =
+            await response.json();
+
+        if (!result.status) {
+            throw new Error(result.message);
+        }
+
+        return result.data;
+    } catch (error: any) {
+        console.error("Class attendance fetch error:", error);
+        throw error;
+    }
+};

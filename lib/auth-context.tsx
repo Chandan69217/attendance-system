@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (email: string, password: string, role: Role) => Promise<LoginResponse>
   logout: () => void
   isAuthenticated: boolean
+  setUpdatedUser: (user: User) => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: user_json.name,
       email: user_json.email,
       avatar: user_json.avatar,
-      joinDate: user_json.join_date,
+      join_date: user_json.join_date,
       phone: user_json.phone,
       status: user_json.status,
       role: user_json.role,
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: data.data.name,
         email: data.data.email,
         avatar:data.data.avatar,
-        joinDate:data.data.join_date,
+        join_date:data.data.join_date,
         phone:data.data.phone,
         status:data.data.status,
         role: data.data.role,
@@ -138,8 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false)
   }
 
+  const setUpdatedUser = (updatedUser: User) => {
+    localStorage.setItem(StorageKey.USER, JSON.stringify(updatedUser))
+    setUser(updatedUser)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated}}>
+    <AuthContext.Provider value={{ user, login, logout, setUpdatedUser,isAuthenticated}}>
       {children}
     </AuthContext.Provider>
   )

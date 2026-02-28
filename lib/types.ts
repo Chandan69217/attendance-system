@@ -67,6 +67,11 @@ export interface Lecture {
   updated_at?:string
 }
 
+export interface SubjectAttendance {
+  subject:string,
+  percenatge: number
+}
+
 export interface Subject {
   id:string,
   faculty_count: number,
