@@ -20,7 +20,7 @@ export function AdminOverview() {
   const[ totalStudents,setTotalStudents] = useState(0)
   const[ totalFaculty,setTotalFaculty] = useState(0)
   const [attendanceRate,setAttenanceRate] = useState(0)
-  const [pendingVerifications,setPendingAttendance] = useState([])
+  const [pendingVerifications,setPendingAttendance] = useState(0)
   const [facultyAttendance,setFacultyAttendance] = useState<FacultyAttendance[]>([])
   const today = new Date()
   const refDate = today.toISOString().split("T")[0]
