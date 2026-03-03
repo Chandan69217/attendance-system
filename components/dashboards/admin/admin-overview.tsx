@@ -7,22 +7,103 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {Users, ClipboardList, GraduationCap, TrendingUp, TrendingDown, Clock} from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart, Tooltip as RechartsTooltip, Legend } from "recharts"
 import { getMonthlyAttendanceChartData, getWeeklyAttendanceChartData } from "@/lib/utils"
+import { StorageKey } from "@/lib/constants"
+import { useEffect, useState } from "react"
+import { ADMIN_OVERVIEW, API_BASE_URL } from "@/lib/config"
+import { FacultyAttendance } from "@/lib/types"
+import { CircularLoader } from "@/components/ui/circular-loader"
 
 
 
 export function AdminOverview() {
-  const { users, attendance, facultyAttendance } = useAppState()
-  const totalStudents = users.filter((u) => u.role === "student").length
-  const totalFaculty = users.filter((u) => u.role === "faculty").length
-  const todayAttendance = attendance.filter((a) => a.date === "2026-02-06")
-  const todayPresent = todayAttendance.filter((a) => a.status === "present").length
-  const todayTotal = todayAttendance.length
-  const attendanceRate = todayTotal > 0 ? Math.round((todayPresent / todayTotal) * 100) : 0
-  const pendingVerifications = facultyAttendance.filter((fa) => fa.verificationStatus === "pending").length
+
+  const[ totalStudents,setTotalStudents] = useState(0)
+  const[ totalFaculty,setTotalFaculty] = useState(0)
+  const [attendanceRate,setAttenanceRate] = useState(0)
+  const [pendingVerifications,setPendingAttendance] = useState([])
+  const [facultyAttendance,setFacultyAttendance] = useState<FacultyAttendance[]>([])
   const today = new Date()
   const refDate = today.toISOString().split("T")[0]
-  const monthlyAttendanceData = getMonthlyAttendanceChartData([...attendance,...facultyAttendance],today.getFullYear())
-  const weeklyAttendanceData = getWeeklyAttendanceChartData([...attendance,...facultyAttendance],refDate) 
+  const monthlyAttendanceData = getMonthlyAttendanceChartData(facultyAttendance,today.getFullYear())
+  const weeklyAttendanceData = getWeeklyAttendanceChartData(facultyAttendance,refDate) 
+  const [isLoading,setLoading] = useState(true)
+
+
+
+  const getStatsCount = async () => {
+    try {
+     
+
+      const token = localStorage.getItem(StorageKey.TOKEN);
+
+      const res = await fetch(
+        `${API_BASE_URL}${ADMIN_OVERVIEW.STATUS_COUNT}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch dashboard stats");
+      }
+
+      const result = await res.json();
+
+      const data = result?.data;
+
+      setTotalStudents(data?.student_count || 0);
+      setTotalFaculty(data?.faculty_count || 0);
+      setAttenanceRate(data?.today_attendance_percentage || 0);
+      setPendingAttendance(data?.pending_verification || 0);
+
+    } catch (err) {
+      console.error("Recent Faculty Attendance Error:", err);
+    } 
+  };
+
+
+  const getRecentFacultyAttendance = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem(StorageKey.TOKEN);
+
+      const res = await fetch(
+        `${API_BASE_URL}${ADMIN_OVERVIEW.RECENT_ATTENDANCE}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch recent faculty attendance");
+      }
+
+      const result = await res.json();
+
+      setFacultyAttendance(result?.data || []);
+
+    } catch (err) {
+      console.error("Recent Faculty Attendance Error:", err);
+    }finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  useEffect(() => {
+    getStatsCount();
+    getRecentFacultyAttendance();
+  }, []);
+
+
+
+
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -106,27 +187,42 @@ export function AdminOverview() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Subject</TableHead>
+                <TableHead>Faculty</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Method</TableHead>
+                <TableHead>Check In</TableHead>
+                <TableHead>Check Out</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {attendance.slice(0, 6).map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="font-medium text-foreground">{r.studentName}</TableCell>
-                  <TableCell>{r.subject}</TableCell>
-                  <TableCell>{r.date}</TableCell>
-                  <TableCell><Badge variant="secondary" className="text-xs capitalize">{r.method?.replace("-", " ") ?? "manual"}</Badge></TableCell>
-                  <TableCell>
-                    <Badge className={r.status === "present" ? "bg-primary/15 text-primary border-primary/20" : r.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
-                      {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {
+                isLoading  ? ( 
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <CircularLoader/>
+                    </TableCell>
+                  </TableRow>
+                ):
+                (
+                facultyAttendance.length === 0 ? (
+                      <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No recent attendance</TableCell></TableRow>
+                ):(
+                      facultyAttendance.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-medium text-foreground">{r.faculty_name}</TableCell>
+                          <TableCell>{r.date}</TableCell>
+                          <TableCell>{r.check_in ?? '--'}</TableCell>
+                          <TableCell>{r.check_out ?? '--'}</TableCell>
+                          <TableCell>
+                            <Badge className={r.status === "present" ? "bg-primary/15 text-primary border-primary/20" : r.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
+                              {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                )
+                )
+              }
             </TableBody>
           </Table>
         </CardContent>
