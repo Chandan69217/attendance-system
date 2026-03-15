@@ -9,10 +9,16 @@ interface UseWebSocketOptions {
     autoReconnect?:boolean
 }
 
-export function useWebSocket({ url, onMessage,autoReconnect=true,onClose }: UseWebSocketOptions) {
+export function useWebSocket({ url, onMessage, autoReconnect = true, onClose }: UseWebSocketOptions) {
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<NodeJS.Timeout | null>(null);
     const shouldReconnect = useRef(true);
+    const onMessageRef = useRef(onMessage);
+
+    // Keep the ref updated with the latest callback
+    useEffect(() => {
+        onMessageRef.current = onMessage;
+    }, [onMessage]);
 
     const [connected, setConnected] = useState(false);
 
@@ -33,7 +39,7 @@ export function useWebSocket({ url, onMessage,autoReconnect=true,onClose }: UseW
             ws.onmessage = (event) => {
                 try {
                     const parsed = JSON.parse(event.data);
-                    onMessage?.(parsed);
+                    onMessageRef.current?.(parsed);
                 } catch {
                     console.log("Message:", event.data);
                 }
@@ -66,7 +72,7 @@ export function useWebSocket({ url, onMessage,autoReconnect=true,onClose }: UseW
 
             wsRef.current?.close(1000);
         };
-    }, [url,autoReconnect]);
+    }, [url, autoReconnect, onClose]);
 
     const send = (data: any) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {

@@ -41,7 +41,7 @@ export function FaceAuthDialog({
     const [error, setError] = useState("");
 
     const handleMessage = useCallback((data: any) => {
-        console.log({"socket data" : data})
+    
         setShouldReconnect(data.status);
 
         if (!data.status) {
@@ -50,18 +50,24 @@ export function FaceAuthDialog({
             stopCamera();
         }
 
-        if (data.data && data.data.isMarked) {
+        if (data?.data?.isMarked) {
+
+            hasTriggeredRef.current = true;
+
+            stopDetection();
+            stopCamera();
 
             onVerify({
                 status: data.status ?? false,
                 message: data.message ?? ""
             });
 
-            stopDetection();
-            stopCamera();
-            onClose(false);
-            return
-        }else{
+            setTimeout(() => {
+                onClose(false);
+            }, 200);
+
+            return;
+        } else{
 
             hasTriggeredRef.current = false;
         }
@@ -114,35 +120,45 @@ export function FaceAuthDialog({
 
     // Start camera
     useEffect(() => {
-        if (!open) return
+        if (!open) return;
 
-        if (!error) {
-            navigator.mediaDevices
-                .getUserMedia({ video: true })
-                .then((stream) => {
-                    if (!videoRef.current) return
+        let stream: MediaStream | null = null;
 
-                    videoRef.current.srcObject = stream
+        navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then((s) => {
+                stream = s;
 
-                    videoRef.current.onloadedmetadata = () => {
-                        videoRef.current?.play()
+                if (!videoRef.current) return;
 
-                        console.log("start detection called")
-                        startDetection()
-                    }
-                })
-        }
+                videoRef.current.srcObject = s;
 
-    }, [open])
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current?.play();
+                    startDetection();
+                };
+            });
+
+        return () => {
+            stopDetection();
+
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+            }
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = null;
+            }
+        };
+    }, [open]);
 
 
     useEffect(() => {
-        if (open) {
-            setError("");
+        if (!open) {
+            stopDetection();
+            setError("")
             setRecognizedLog([]);
-            setShouldReconnect(true);
-            stopDetection()
-            stopCamera()
+            stopCamera();
             hasTriggeredRef.current = false;
         }
     }, [open]);
@@ -150,14 +166,19 @@ export function FaceAuthDialog({
 
 
 
+
+
+
     const stopCamera = () => {
-        const stream = videoRef.current?.srcObject as MediaStream | null
-        if (!stream) return
+        const video = videoRef.current;
+        const stream = video?.srcObject as MediaStream | null;
 
-        stream.getTracks().forEach((track) => track.stop())
-        if (videoRef.current) videoRef.current.srcObject = null
-    }
+        if (!stream) return;
 
+        stream.getTracks().forEach((track) => track.stop());
+
+        if (video) video.srcObject = null;
+    };
 
     const markAttendace = async () => {
         if (!videoRef.current || !canvasCaptureRef.current) return;
@@ -185,7 +206,11 @@ export function FaceAuthDialog({
                 .toDataURL("image/jpeg", 0.7)
                 .split(",")[1];
 
-            const { latitude, longitude } = await getLocation();
+            const { latitude, longitude, accuracy } = await getLocation()
+            if (accuracy > 100) {
+                setError("Location not accurate. Please enable GPS.")
+                return
+            }
 
             send({
                 image: base64,

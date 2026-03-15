@@ -262,12 +262,12 @@ export const mockExams: Exam[] = [
 ]
 
 export const mockNotifications: Notification[] = [
-  { id: "N001", title: "Mid-term Schedule Released", message: "The mid-term examination schedule for Spring 2026 has been published.", category: "exam", read: false, timestamp: "2026-02-06T10:00:00Z" },
-  { id: "N002", title: "Assignment Due Reminder", message: "Binary Tree Implementation is due on Feb 15, 2026.", category: "assignment", read: false, timestamp: "2026-02-06T08:30:00Z" },
-  { id: "N003", title: "Campus Holiday Notice", message: "The campus will be closed on Feb 17 for Presidents' Day.", category: "announcement", read: true, timestamp: "2026-02-05T14:00:00Z" },
-  { id: "N004", title: "New Assignment Posted", message: "Graph Traversal assignment has been posted for Data Structures.", category: "assignment", read: false, timestamp: "2026-02-05T09:00:00Z" },
-  { id: "N005", title: "Lab Session Rescheduled", message: "Friday's lab session has been moved to Saturday 10 AM.", category: "announcement", read: true, timestamp: "2026-02-04T16:00:00Z" },
-  { id: "N006", title: "Attendance Marked", message: "Your attendance for Data Structures on Feb 6 has been recorded.", category: "attendance", read: false, timestamp: "2026-02-06T09:15:00Z" },
+  { id: "N001", title: "Mid-term Schedule Released", message: "The mid-term examination schedule for Spring 2026 has been published.", category: "exam", read: false, created_at: "2026-02-06T10:00:00Z" },
+  { id: "N002", title: "Assignment Due Reminder", message: "Binary Tree Implementation is due on Feb 15, 2026.", category: "assignment", read: false, created_at: "2026-02-06T08:30:00Z" },
+  { id: "N003", title: "Campus Holiday Notice", message: "The campus will be closed on Feb 17 for Presidents' Day.", category: "announcement", read: true, created_at: "2026-02-05T14:00:00Z" },
+  { id: "N004", title: "New Assignment Posted", message: "Graph Traversal assignment has been posted for Data Structures.", category: "assignment", read: false, created_at: "2026-02-05T09:00:00Z" },
+  { id: "N005", title: "Lab Session Rescheduled", message: "Friday's lab session has been moved to Saturday 10 AM.", category: "announcement", read: true, created_at: "2026-02-04T16:00:00Z" },
+  { id: "N006", title: "Attendance Marked", message: "Your attendance for Data Structures on Feb 6 has been recorded.", category: "attendance", read: false, created_at: "2026-02-06T09:15:00Z" },
 ]
 
 export const mockClasses: Class[] = [

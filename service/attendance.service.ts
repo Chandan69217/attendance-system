@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth-context";
 import { API_BASE_URL, ATTENDANCE_API } from "@/lib/config";
+import { StorageKey } from "@/lib/constants";
 import { AttendanceRecord, FacultyAttendance, SubjectAttendance } from "@/lib/types";
 
 
@@ -16,7 +17,7 @@ export const getFacultyAttendance = async (
     date?: string
 ): Promise<FacultyAttendance[]> => {
     try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem(StorageKey.TOKEN);
 
         const params = new URLSearchParams();
 
@@ -54,7 +55,7 @@ export const getStudentAttendance = async (
     date?: string
 ): Promise<AttendanceRecord[]> => {
     try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem(StorageKey.TOKEN);
 
         const params = new URLSearchParams();
 
@@ -89,7 +90,7 @@ export const getStudentAttendance = async (
 
 export const getAttendanceBySubject = async (): Promise<SubjectAttendance[]> => {
     try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem(StorageKey.TOKEN);
 
         const params = new URLSearchParams();
 
@@ -123,7 +124,7 @@ export const verifyFacultyAttendance = async (
     status: "pending" | "approved" | "rejected"
 ): Promise<FacultyAttendance|null> => {
     try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem(StorageKey.TOKEN);
 
         const response = await fetch(
             `${API_BASE_URL}${ATTENDANCE_API.VERIFY_ATTENDANCE}/${id}`,
@@ -168,7 +169,7 @@ export const getClassAttendance = async (
     date?: string
 ): Promise<AttendanceRecord[]> => {
     try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem(StorageKey.TOKEN);
 
         const params = new URLSearchParams();
 

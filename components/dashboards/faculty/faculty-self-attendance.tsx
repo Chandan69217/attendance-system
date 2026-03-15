@@ -67,16 +67,21 @@ export function FacultySelfAttendance() {
         <p className="text-sm text-muted-foreground">Mark your daily attendance. This will be verified by the principal/admin.</p>
       </div>
 
-      <FaceAuthDialog selectedUser={user!} open={openFaceRecognition} onVerify={(v) => {
-        if (v) {
-          if (mode === 'in') {
-            handlecheck_in()
-          } else {
-            handlecheck_out()
+      <FaceAuthDialog
+        selectedUser={user!}
+        open={openFaceRecognition}
+        onVerify={(v) => {
+          if (v.status) {
+            if (mode === "in") {
+              handlecheck_in()
+            } else {
+              handlecheck_out()
+            }
           }
-        }
-
-      }} onClose={setOpenFaceRecognition} remarks={remarks} />
+        }}
+        onClose={setOpenFaceRecognition}
+        remarks={remarks}
+      />
 
       <Card className="border-primary/20">
         <CardHeader><CardTitle className="text-base">Today - {<LiveDateTime />}</CardTitle><CardDescription>Mark your check-in and check-out</CardDescription></CardHeader>

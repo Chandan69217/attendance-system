@@ -59,7 +59,7 @@ export function AdminOverview() {
       setPendingAttendance(data?.pending_verification || 0);
 
     } catch (err) {
-      console.error("Recent Faculty Attendance Error:", err);
+      console.error("Dashboard Stats Fetch Error:", err, "URL:", `${API_BASE_URL}${ADMIN_OVERVIEW.STATUS_COUNT}`);
     } 
   };
 
@@ -87,7 +87,7 @@ export function AdminOverview() {
       setFacultyAttendance(result?.data || []);
 
     } catch (err) {
-      console.error("Recent Faculty Attendance Error:", err);
+      console.error("Recent Faculty Attendance Fetch Error:", err, "URL:", `${API_BASE_URL}${ADMIN_OVERVIEW.RECENT_ATTENDANCE}`);
     }finally {
       setLoading(false);
     }

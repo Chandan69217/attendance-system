@@ -1,14 +1,19 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useCallback } from "react"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
 import type { User, AttendanceRecord, FacultyAttendance, Assignment, Exam, Notification, Department, AcademicSession, Class } from "./types"
 import {
   mockUsers, mockAttendance, mockFacultyAttendance, mockAssignments,
   mockExams, mockNotifications, mockDepartments, mockSessions,
   mockClasses,
 } from "./mock-data"
+import { getNotifications } from "@/service/notification.service"
+import { useWebSocket } from "@/hooks/useWebSocket"
+import { API_BASE_URL, NOTIFICATION_API, WEBSOCKET_API } from "./config"
+import { useAuth } from "./auth-context"
+
 
 export interface Toast {
   id: string
@@ -31,7 +36,7 @@ interface AppSettings {
   semesterStart: string
   semesterEnd: string
   holidays: string
-  latitude:number
+  latitude: number
   longitude: number
 
 }
@@ -59,7 +64,7 @@ interface AppStateContextType {
   addToast: (toast: Omit<Toast, "id">) => void
   removeToast: (id: string) => void
   classes: Class[]
-  setClasses : React.Dispatch<React.SetStateAction<Class[]>>
+  setClasses: React.Dispatch<React.SetStateAction<Class[]>>
 }
 
 const AppStateContext = createContext<AppStateContextType | null>(null)
@@ -78,8 +83,8 @@ const defaultSettings: AppSettings = {
   semesterStart: "2026-01-15",
   semesterEnd: "2026-05-30",
   holidays: "2026-02-17, 2026-03-30, 2026-04-20",
-  latitude:0,
-  longitude:0,
+  latitude: 0,
+  longitude: 0,
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
@@ -88,19 +93,65 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [facultyAttendance, setFacultyAttendance] = useState<FacultyAttendance[]>(mockFacultyAttendance)
   const [assignments, setAssignments] = useState<Assignment[]>(mockAssignments)
   const [exams, setExams] = useState<Exam[]>(mockExams)
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [departments, setDepartments] = useState<Department[]>(mockDepartments)
   const [sessions, setSessions] = useState<AcademicSession[]>(mockSessions)
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [classes,setClasses] = useState<Class[]>(mockClasses)
-
+  const [classes, setClasses] = useState<Class[]>(mockClasses)
+  const { user } = useAuth()
   const addToast = useCallback((toast: Omit<Toast, "id">) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     setToasts((prev) => [...prev, { ...toast, id }])
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
     }, 4000)
+  }, [])
+
+  const handleMessage = useCallback((data: any) => {
+    console.log("WebSocket message received:", data)
+    const newNotification: Notification = {
+      ...data,
+      id: data.id || data._id || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      read: data.read ?? false,
+      created_at: data.created_at || data.timestamp || new Date().toISOString(),
+      category: data.category || "announcement"
+    }
+    setNotifications((prev) => {
+      // Avoid duplicate notifications if WS sends same message as initial fetch
+      if (prev.some(n => n.id === newNotification.id)) return prev
+      return [newNotification, ...prev]
+    })
+    addToast({
+      title: "New Notification",
+      description: data.message,
+      variant: "default",
+    })
+  }, [addToast])
+
+
+  // notification websockets
+
+  const { connected, send } = useWebSocket({
+    url: `${API_BASE_URL}${WEBSOCKET_API.WS_GET_NOTIFICATION}/${user?.id}`,
+    onMessage: handleMessage,
+  })
+
+  useEffect(() => {
+    const getNotif = async () => {
+      const fetchedNotifications = await getNotifications()
+      setNotifications((prev) => {
+        // Merge fetched notifications with ones already received via WebSocket
+        const existingIds = new Set(prev.map(n => n.id))
+        const uniqueFetched = fetchedNotifications.filter((n: any) => !existingIds.has(n.id || n._id))
+        return [...prev, ...uniqueFetched.map((n: any) => ({
+          ...n,
+          id: n.id || n._id,
+          created_at: n.created_at || n.timestamp
+        }))]
+      })
+    }
+    getNotif()
   }, [])
 
   const removeToast = useCallback((id: string) => {

@@ -147,12 +147,12 @@ export interface Exam {
 }
 
 export interface Notification {
-  id: string
+  id?: string
   title: string
   message: string
+  read?:boolean
+  created_at?:string
   category: "exam" | "assignment" | "announcement" | "attendance"
-  read: boolean
-  timestamp: string
   targetRole?: Role
 }
 
