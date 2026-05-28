@@ -3,15 +3,18 @@
 import React, { useEffect, useCallback } from "react"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
-import type { User, AttendanceRecord, FacultyAttendance, Assignment, Exam, Notification, Department, AcademicSession, Class } from "./types"
-import {
-  mockUsers, mockAttendance, mockFacultyAttendance, mockAssignments,
-  mockExams, mockNotifications, mockDepartments, mockSessions,
-  mockClasses,
-} from "./mock-data"
+import type { User, AttendanceRecord, FacultyAttendance, Assignment, Exam, Notification, Department, AcademicSession, Class, AppSettings } from "./types"
+
 import { getNotifications } from "@/service/notification.service"
+import { getDepartments } from "@/service/dept.service"
+import { getClasses } from "@/service/classes.service"
+import { getFilterUsers } from "@/service/users.service"
+import { getSessions } from "@/service/session.service"
+import { getExams } from "@/service/exams.service"
+import { getAssignments } from "@/service/assignments.service"
 import { useWebSocket } from "@/hooks/useWebSocket"
-import { API_BASE_URL, NOTIFICATION_API, WEBSOCKET_API } from "./config"
+import { API_BASE_URL, NOTIFICATION_API, WEBSOCKET_API, SETTINGS_API } from "./config"
+import { StorageKey } from "./constants"
 import { useAuth } from "./auth-context"
 
 
@@ -22,24 +25,6 @@ export interface Toast {
   variant?: "default" | "success" | "destructive"
 }
 
-interface AppSettings {
-  confidenceThreshold: number
-  lateThreshold: number
-  maxCheckInDistance: number
-  allowStudentSelfAttendance: boolean
-  requireFacultyVerification: boolean
-  sendAbsentNotifications: boolean
-  emailNotifications: boolean
-  lowAttendanceAlerts: boolean
-  dailyReports: boolean
-  minAttendancePercent: number
-  semesterStart: string
-  semesterEnd: string
-  holidays: string
-  latitude: number
-  longitude: number
-
-}
 
 interface AppStateContextType {
   users: User[]
@@ -70,35 +55,36 @@ interface AppStateContextType {
 const AppStateContext = createContext<AppStateContextType | null>(null)
 
 const defaultSettings: AppSettings = {
-  confidenceThreshold: 85,
-  lateThreshold: 15,
-  maxCheckInDistance: 100,
-  allowStudentSelfAttendance: true,
-  requireFacultyVerification: true,
-  sendAbsentNotifications: true,
-  emailNotifications: true,
-  lowAttendanceAlerts: true,
-  dailyReports: false,
-  minAttendancePercent: 75,
-  semesterStart: "2026-01-15",
-  semesterEnd: "2026-05-30",
-  holidays: "2026-02-17, 2026-03-30, 2026-04-20",
+  confidence_threshold: 85,
+  late_threshold: 15,
+  max_check_in_distance: 100,
+  allow_student_self_attendance: true,
+  require_faculty_verification: true,
+  send_absent_notifications: true,
+  email_notifications: true,
+  low_attendance_alerts: true,
+  daily_reports: false,
+  min_attendance_percent: 75,
+  semester_start: "2026-01-15",
+  semester_end: "2026-05-30",
+  holidays: ["2026-02-17", "2026-03-30", "2026-04-20"],
   latitude: 0,
   longitude: 0,
+  check_in: "10:00 AM",
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>(mockUsers)
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>(mockAttendance)
-  const [facultyAttendance, setFacultyAttendance] = useState<FacultyAttendance[]>(mockFacultyAttendance)
-  const [assignments, setAssignments] = useState<Assignment[]>(mockAssignments)
-  const [exams, setExams] = useState<Exam[]>(mockExams)
+  const [users, setUsers] = useState<User[]>([])
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
+  const [facultyAttendance, setFacultyAttendance] = useState<FacultyAttendance[]>([])
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [exams, setExams] = useState<Exam[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [departments, setDepartments] = useState<Department[]>(mockDepartments)
-  const [sessions, setSessions] = useState<AcademicSession[]>(mockSessions)
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [sessions, setSessions] = useState<AcademicSession[]>([])
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [classes, setClasses] = useState<Class[]>(mockClasses)
+  const [classes, setClasses] = useState<Class[]>([])
   const { user } = useAuth()
   const addToast = useCallback((toast: Omit<Toast, "id">) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -132,8 +118,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // notification websockets
 
+  const wsUrl = user ? `${API_BASE_URL.replace(/^http/, 'ws')}${WEBSOCKET_API.WS_GET_NOTIFICATION}/${user.id}` : '';
   const { connected, send } = useWebSocket({
-    url: `${API_BASE_URL}${WEBSOCKET_API.WS_GET_NOTIFICATION}/${user?.id}`,
+    url: wsUrl,
     onMessage: handleMessage,
   })
 
@@ -151,8 +138,73 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }))]
       })
     }
-    getNotif()
-  }, [])
+    
+    const getSettings = async () => {
+      try {
+        const token = localStorage.getItem(StorageKey.TOKEN)
+        if (!token) return
+        const res = await fetch(`${API_BASE_URL}${SETTINGS_API.GET}`, {
+          method: "GET",
+          headers: {
+            "Content-type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data && data.data) {
+            setSettings(data.data)
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err)
+      }
+    }
+
+    const fetchCoreData = async () => {
+      try {
+        // Fetch departments
+        const depts = await getDepartments()
+        if (depts) setDepartments(depts)
+
+        // Fetch classes
+        const cls = await getClasses()
+        if (cls) setClasses(cls)
+
+        // Fetch users
+        const usrs = await getFilterUsers()
+        if (usrs) setUsers(usrs)
+
+        // Fetch sessions
+        const sess = await getSessions()
+        if (sess) setSessions(sess)
+
+        // Fetch exams
+        const exms = await getExams()
+        if (exms) setExams(exms)
+
+        // Fetch assignments
+        const assigns = await getAssignments()
+        if (assigns) setAssignments(assigns)
+
+      } catch (err) {
+        console.error("Failed to fetch core data:", err)
+      }
+    }
+
+    if (user) {
+      getNotif()
+      getSettings()
+      fetchCoreData()
+    } else {
+      setNotifications([])
+      setAttendance([])
+      setFacultyAttendance([])
+      setAssignments([])
+      setExams([])
+      setSettings(defaultSettings)
+    }
+  }, [user])
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))

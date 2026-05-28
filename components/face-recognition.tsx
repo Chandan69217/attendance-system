@@ -88,7 +88,7 @@ export function FaceAuthDialog({
 
 
     const { send, connected } = useWebSocket({
-        url: `${API_BASE_URL}${WEBSOCKET_API.MARK_ATTENDANCE}/${selectedUser.id}`,
+        url: `${API_BASE_URL.replace(/^http/, 'ws')}${WEBSOCKET_API.MARK_ATTENDANCE}/${selectedUser.id}`,
         onMessage: handleMessage,
         autoReconnect: shouldReconnect,
     });

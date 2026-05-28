@@ -94,3 +94,18 @@ export const NOTIFICATION_API = {
     "MARK_AS_READ": process.env.NEXT_PUBLIC_MARK_AS_READ,
     "DELETE_NOTIFICATION": process.env.NEXT_PUBLIC_DELETE_NOTIFICATION,
 }
+
+export const EXAM_API = {
+    "CREATE": "/exams/create",
+    "GET": "/exams/get",
+}
+
+export const ASSIGNMENT_API = {
+    "CREATE": "/assignments/create",
+    "GET": "/assignments/get",
+}
+
+export const REPORTS_API = {
+    "LIST": "/reports/list",
+    "BY_DATE": "/reports",
+}

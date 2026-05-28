@@ -1,6 +1,7 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
+import { useAppState } from "@/lib/app-state"
 import {
   Sidebar,
   SidebarContent,
@@ -70,14 +71,34 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ activeSection, onSectionChange }: DashboardSidebarProps) {
   const { user, logout } = useAuth()
+  const { settings } = useAppState()
+  
   if (!user) return null
 
-  const navItems =
+  let navItems =
     user.role === "admin"
       ? adminNavItems
       : user.role === "faculty"
         ? facultyNavItems
         : studentNavItems
+
+  navItems = navItems.filter((item) => {
+    // Attendance Policy UI Logic
+    if (user.role === "student" && item.id === "mark-attendance") {
+      return settings.allow_student_self_attendance
+    }
+    if (user.role === "admin" && item.id === "faculty-attendance") {
+      return settings.require_faculty_verification
+    }
+    
+    // Notification Settings UI Logic
+    const notificationsEnabled = settings.email_notifications || settings.low_attendance_alerts || settings.daily_reports || settings.send_absent_notifications
+    if (item.id === "notifications" && !notificationsEnabled) {
+      return false
+    }
+
+    return true
+  })
 
   const roleLabel = user.role === "admin" ? "Administrator" : user.role === "faculty" ? "Faculty" : "Student"
 

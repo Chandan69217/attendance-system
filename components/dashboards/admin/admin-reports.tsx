@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppState } from "@/lib/app-state"
 import { getMonthlyAttendanceChartData, getSubjectAttendanceChartData, getWeeklyAttendanceChartData } from "@/lib/utils"
-import {  Download, TrendingDown, TrendingUp } from "lucide-react"
+import { exportToPdf } from "@/lib/export-pdf"
+import { Download, TrendingDown, TrendingUp } from "lucide-react"
+import { useRef } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart, Tooltip as RechartsTooltip, Legend } from "recharts"
 
 export function AdminReports() {
@@ -18,6 +20,53 @@ export function AdminReports() {
   const monthlyAttendanceData = getMonthlyAttendanceChartData([...attendance, ...facultyAttendance], today.getFullYear())
   const weeklyAttendanceData = getWeeklyAttendanceChartData([...attendance, ...facultyAttendance], refDate) 
   const subjectByAttendance = getSubjectAttendanceChartData(attendance)
+  
+  const dailyChartRef = useRef<HTMLDivElement>(null)
+  const monthlyChartRef = useRef<HTMLDivElement>(null)
+
+  const uniqueFacultyIds = Array.from(new Set(facultyAttendance.map(a => a.faculty_id)))
+
+  const handleExportPDF = async () => {
+    await exportToPdf({
+      title: "Attendance Report",
+      fileName: `attendance_report_${refDate}.pdf`,
+      charts: [dailyChartRef, monthlyChartRef],
+      tableHeaders: ["Faculty", "Total Days", "Present", "Absent/Leave", "Approved", "Pending"],
+      tableData: uniqueFacultyIds,
+      mapRow: (fid) => {
+        const records = facultyAttendance.filter((r) => r.faculty_id === fid)
+        const name = records[0]?.faculty_name ?? fid
+        const present = records.filter((r) => r.status === "present" || r.status === "late").length
+        const absent = records.filter((r) => r.status === "absent" || r.status === "on-leave").length
+        const approved = records.filter((r) => r.verification_status === "approved").length
+        const pending = records.filter((r) => r.verification_status === "pending").length
+        return [name, records.length, present, absent, approved, pending]
+      }
+    })
+  }
+
+  const handleExportCSV = () => {
+    const headers = ["Faculty", "Total Days", "Present", "Absent/Leave", "Approved", "Pending"]
+    const rows = uniqueFacultyIds.map(fid => {
+      const records = facultyAttendance.filter((r) => r.faculty_id === fid)
+      const name = records[0]?.faculty_name ?? fid
+      const present = records.filter((r) => r.status === "present" || r.status === "late").length
+      const absent = records.filter((r) => r.status === "absent" || r.status === "on-leave").length
+      const approved = records.filter((r) => r.verification_status === "approved").length
+      const pending = records.filter((r) => r.verification_status === "pending").length
+      return `"${name}",${records.length},${present},${absent},${approved},${pending}`
+    })
+    
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `attendance_report_${refDate}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -26,8 +75,8 @@ export function AdminReports() {
           <p className="text-sm text-muted-foreground">Generate and export attendance reports</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export PDF</Button>
-          <Button variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export CSV</Button>
+          <Button onClick={handleExportPDF} variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export PDF</Button>
+          <Button onClick={handleExportCSV} variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export CSV</Button>
         </div>
       </div>
       <Tabs defaultValue="daily">
@@ -41,7 +90,7 @@ export function AdminReports() {
           <Card>
             <CardHeader><CardTitle className="text-base">Daily Attendance Report</CardTitle><CardDescription>Attendance breakdown for the week</CardDescription></CardHeader>
             <CardContent>
-              <div className="h-72">
+              <div className="h-72" ref={dailyChartRef}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={weeklyAttendanceData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -61,7 +110,7 @@ export function AdminReports() {
           <Card>
             <CardHeader><CardTitle className="text-base">Monthly Trend</CardTitle><CardDescription>Attendance trend over the semester</CardDescription></CardHeader>
             <CardContent>
-              <div className="h-72">
+              <div className="h-72" ref={monthlyChartRef}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyAttendanceData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -108,20 +157,24 @@ export function AdminReports() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {["F001", "F002", "F003", "F004"].map((fid) => {
-                    const records = facultyAttendance.filter((r) => r.facultyId === fid)
-                    const name = records[0]?.facultyName ?? fid
+                  {uniqueFacultyIds.length > 0 ? uniqueFacultyIds.map((fid) => {
+                    const records = facultyAttendance.filter((r) => r.faculty_id === fid)
+                    const name = records[0]?.faculty_name ?? fid
                     return (
                       <TableRow key={fid}>
                         <TableCell className="font-medium text-foreground">{name}</TableCell>
                         <TableCell>{records.length}</TableCell>
                         <TableCell className="font-medium text-primary">{records.filter((r) => r.status === "present" || r.status === "late").length}</TableCell>
                         <TableCell className="font-medium text-destructive">{records.filter((r) => r.status === "absent" || r.status === "on-leave").length}</TableCell>
-                        <TableCell><Badge className="bg-primary/15 text-primary border-primary/20">{records.filter((r) => r.verificationStatus === "approved").length}</Badge></TableCell>
-                        <TableCell><Badge className="bg-chart-3/15 text-chart-3 border-chart-3/20">{records.filter((r) => r.verificationStatus === "pending").length}</Badge></TableCell>
+                        <TableCell><Badge className="bg-primary/15 text-primary border-primary/20">{records.filter((r) => r.verification_status === "approved").length}</Badge></TableCell>
+                        <TableCell><Badge className="bg-chart-3/15 text-chart-3 border-chart-3/20">{records.filter((r) => r.verification_status === "pending").length}</Badge></TableCell>
                       </TableRow>
                     )
-                  })}
+                  }) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-4">No faculty attendance data available.</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

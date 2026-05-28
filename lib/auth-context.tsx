@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import type { User, Role } from "./types"
-import { mockUsers } from "./mock-data"
 import { API_BASE_URL, AUTH_API } from "./config"
 import { StorageKey } from "./constants"
 

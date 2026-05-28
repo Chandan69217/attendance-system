@@ -141,7 +141,7 @@ export function AttendanceCamera() {
     }, [addToast]);
   
     const { send, connected } = useWebSocket({
-      url: `${API_BASE_URL}${WEBSOCKET_API.STUDENT_FACE_ATTENDANCE}`,
+      url: `${API_BASE_URL.replace(/^http/, 'ws')}${WEBSOCKET_API.STUDENT_FACE_ATTENDANCE}`,
       onMessage: handleMessage,
       onClose : ()=>{
         hasTriggeredRef.current=false

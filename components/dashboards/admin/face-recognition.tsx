@@ -98,7 +98,7 @@ useEffect(()=>{
 
 
   const { send, connected } = useWebSocket({
-    url: `${API_BASE_URL}${WEBSOCKET_API.FACE_RECOGNITION}`,
+    url: `${API_BASE_URL.replace(/^http/, 'ws')}${WEBSOCKET_API.FACE_RECOGNITION}`,
     onMessage: handleMessage,
     onClose : ()=>{
       hasTriggeredRef.current=false

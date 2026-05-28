@@ -6,7 +6,7 @@ interface UseWebSocketOptions {
     url: string;
     onMessage?: (data: any) => void;
     onClose?: () => void;
-    autoReconnect?:boolean
+    autoReconnect?: boolean
 }
 
 export function useWebSocket({ url, onMessage, autoReconnect = true, onClose }: UseWebSocketOptions) {
@@ -24,7 +24,7 @@ export function useWebSocket({ url, onMessage, autoReconnect = true, onClose }: 
 
     useEffect(() => {
         shouldReconnect.current = autoReconnect;
-
+        console.log("Received Url: ", url)
         function connect() {
             if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
@@ -45,8 +45,8 @@ export function useWebSocket({ url, onMessage, autoReconnect = true, onClose }: 
                 }
             };
 
-            ws.onerror = () => {
-                console.log("WebSocket error");
+            ws.onerror = (error) => {
+                console.log("WebSocket error", error);
                 onClose?.()
             };
 
@@ -72,7 +72,7 @@ export function useWebSocket({ url, onMessage, autoReconnect = true, onClose }: 
 
             wsRef.current?.close(1000);
         };
-    }, [url, autoReconnect, onClose]);
+    }, [url, autoReconnect]);
 
     const send = (data: any) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
