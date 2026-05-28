@@ -7,41 +7,86 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useAppState } from "@/lib/app-state"
-import { Bell, CalendarDays, ClipboardList, Send, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { createNotification, deleteNotification, getNotifications, markAsReadNotification } from "@/service/notification.service"
+import { Bell, CalendarDays, ClipboardList, Loader2, Send, Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Notification } from "@/lib/types"
+import { CircularLoader } from "@/components/ui/circular-loader"
 
 
 
 export function AdminNotifications() {
-    const { notifications, setNotifications, addToast } = useAppState()
+
+    const { addToast } = useAppState()
+    const { notifications, setNotifications } = useAppState()
     const [title, setTitle] = useState("")
     const [message, setMessage] = useState("")
     const [category, setCategory] = useState<"announcement" | "exam" | "assignment">("announcement")
     const [target, setTarget] = useState("all")
+    const [isSending, setIsSending] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
 
-    const handleSend = () => {
+
+
+    // useEffect(() => {
+    //     const getNotif = async () => {
+    //         setNotifications(await getNotifications())
+    //     }
+    //     setIsLoading(false)
+    //     getNotif()
+    // }, [])
+
+    const handleSend = async () => {
         if (!title || !message) return
+
+        setIsSending(true)
         const newNotif = {
-            id: `N${Date.now()}`,
             title,
             message,
             category,
-            read: false,
-            timestamp: new Date().toISOString(),
+            target: target,
         }
-        setNotifications((prev) => [newNotif, ...prev])
-        setTitle("")
-        setMessage("")
-        addToast({ title: "Notification Sent", description: `"${title}" has been broadcast.`, variant: "success" })
+        const status = await createNotification(newNotif)
+        if (status) {
+            setNotifications((prev) => [{
+                ...newNotif,
+                id: `temp-${Date.now()}`,
+                read: false,
+                created_at: new Date().toISOString(),
+                category: category as any
+            }, ...prev])
+            setTitle("")
+            setMessage("")
+            addToast({ title: "Notification Sent", description: `"${title}" has been broadcast.`, variant: "success" })
+        } else {
+            addToast({ title: "Notification faild", description: `"${title}" has not been sent.`, variant: "destructive" })
+        }
+        setIsSending(false)
+
     }
 
-    const handleMarkAllRead = () => {
+    const handleMarkAllRead = async () => {
+        const unreadNotifs = notifications.filter(n => !n.read)
+        await Promise.all(unreadNotifs.map(n => markAsReadNotification(n.id ?? "")))
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
         addToast({ title: "All Read", description: "All notifications marked as read.", variant: "default" })
     }
 
-    const handleDelete = (id: string) => {
-        setNotifications((prev) => prev.filter((n) => n.id !== id))
+    const handleMarkRead = async (id: string) => {
+        const status = await markAsReadNotification(id)
+        if (status) {
+            setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+        }
+    }
+
+    const handleDelete = async (id: string) => {
+        const status = await deleteNotification(id)
+        if (status) {
+            setNotifications((prev) => prev.filter((n) => n.id !== id))
+            addToast({ title: "Notification Deleted", description: `Notification has been deleted.`, variant: "success" })
+        } else {
+            addToast({ title: "Notification faild", description: `Notification has not been deleted.`, variant: "destructive" })
+        }
     }
 
     return (
@@ -85,30 +130,46 @@ export function AdminNotifications() {
                             </Select>
                         </div>
                     </div>
-                    <Button onClick={handleSend} disabled={!title || !message} className="gap-2 self-start"><Send className="h-4 w-4" />Send Notification</Button>
+                    <Button onClick={handleSend} disabled={!title || !message} className="gap-2 self-start">
+                        {
+                            isSending ? <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...
+                            </> : <><Send className="h-4 w-4" /> Send Notification </>
+                        }
+                    </Button>
                 </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-3">
-                {notifications.map((notif) => (
-                    <Card key={notif.id} className={!notif.read ? "border-primary/20 bg-primary/[0.02]" : ""}>
-                        <CardContent className="flex items-start gap-4 p-4">
-                            <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${notif.category === "exam" ? "bg-accent/10" : notif.category === "assignment" ? "bg-chart-3/10" : "bg-primary/10"}`}>
-                                {notif.category === "exam" ? <CalendarDays className="h-5 w-5 text-accent" /> : notif.category === "assignment" ? <ClipboardList className="h-5 w-5 text-chart-3" /> : <Bell className="h-5 w-5 text-primary" />}
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                    <p className={`text-sm ${!notif.read ? "font-semibold" : ""} text-card-foreground`}>{notif.title}</p>
-                                    {!notif.read && <div className="h-2 w-2 rounded-full bg-primary" />}
-                                </div>
-                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{notif.message}</p>
-                                <p className="mt-1 text-xs text-muted-foreground/70">{new Date(notif.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground" onClick={() => handleDelete(notif.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+            {
+                isLoading ? (
+                    <CircularLoader />
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        {notifications.map((notif) => (
+                            <Card
+                                key={notif.id}
+                                className={`cursor-pointer transition-colors ${!notif.read ? "border-primary/20 bg-primary/[0.02]" : ""}`}
+                                onClick={() => handleMarkRead(notif.id ?? '')}
+                            >
+                                <CardContent className="flex items-start gap-4 p-4">
+                                    <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${notif.category === "exam" ? "bg-accent/10" : notif.category === "assignment" ? "bg-chart-3/10" : "bg-primary/10"}`}>
+                                        {notif.category === "exam" ? <CalendarDays className="h-5 w-5 text-accent" /> : notif.category === "assignment" ? <ClipboardList className="h-5 w-5 text-chart-3" /> : <Bell className="h-5 w-5 text-primary" />}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className={`text-sm ${!notif.read ? "font-semibold" : ""} text-card-foreground`}>{notif.title}</p>
+                                            {!notif.read && <div className="h-2 w-2 rounded-full bg-primary" />}
+                                        </div>
+                                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{notif.message}</p>
+                                        <p className="mt-1 text-xs text-muted-foreground/70">{new Date(notif.created_at ?? '').toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground" onClick={() => handleDelete(notif.id ?? '')}><Trash2 className="h-4 w-4" /></Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )
+            }
         </div>
     )
 }

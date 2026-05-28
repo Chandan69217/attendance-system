@@ -1,0 +1,111 @@
+
+
+export const API_BASE_URL =
+    process.env.NEXT_PUBLIC_BASE_URL
+
+
+export const AUTH_API = {
+    "SEND_OTP": process.env.NEXT_PUBLIC_SEND_OTP,
+    "VERIFY_OTP": process.env.NEXT_PUBLIC_VERIFY_OTP,
+    "CHANGE_PASSWORD": process.env.NEXT_PUBLIC_CHANGE_PASSWORD,
+    "LOGIN": process.env.NEXT_PUBLIC_LOGIN,
+    "REGISTER": process.env.NEXT_PUBLIC_REGISTER
+}
+
+export const DEPT_API = {
+    "CREATE": process.env.NEXT_PUBLIC_CREATE_DEPARTMENT,
+    "GET_DEPT": process.env.NEXT_PUBLIC_GET_DEPARTMENT,
+    "DELETE": process.env.NEXT_PUBLIC_DELETE_DEPARTMENT,
+    "UPDATE": process.env.NEXT_PUBLIC_UPDATE_DEPARTMENT,
+}
+
+export const USER_API = {
+    "FILTER_USER": process.env.NEXT_PUBLIC_GET_FILTER_USER,
+    "USER_STATS": process.env.NEXT_PUBLIC_GET_USER_STATS,
+    "DELETE_USER": process.env.NEXT_PUBLIC_DELETE_USER,
+    "UPDATE_USER": process.env.NEXT_PUBLIC_UPDATE_USER,
+}
+
+
+export const CLASS_API = {
+    "CREATE": process.env.NEXT_PUBLIC_CREATE_CLASS,
+    "GET": process.env.NEXT_PUBLIC_GET_CLASS,
+    "UPDATE": process.env.NEXT_PUBLIC_UPDATE_CLASS,
+    "DELETE": process.env.NEXT_PUBLIC_DELETE_CLASS,
+    "FACULTY_CLASS": process.env.NEXT_PUBLIC_FACULTY_CLASS,
+}
+
+
+export const SETTINGS_API = {
+    "SAVE": process.env.NEXT_PUBLIC_SAVE_SETTINGS,
+    "GET": process.env.NEXT_PUBLIC_GET_SETTINGS
+}
+
+export const ACADEMIC_API = {
+    "ACADEMIC": process.env.NEXT_PUBLIC_ACADEMIC
+}
+
+export const SESSION_API = {
+    "CREATE": process.env.NEXT_PUBLIC_CREATE_SESSION,
+    "GET": process.env.NEXT_PUBLIC_GET_SESSION,
+    "UPDATE": process.env.NEXT_PUBLIC_UPDATE_SESSION,
+    "DELETE": process.env.NEXT_PUBLIC_DELETE_SESSION,
+}
+
+export const SUBJECT_API = {
+    "CREATE": process.env.NEXT_PUBLIC_CREATE_SUBJECT,
+    "GET": process.env.NEXT_PUBLIC_GET_SUBJECT,
+    "UPDATE": process.env.NEXT_PUBLIC_UPDATE_SUBJECT,
+    "DELETE": process.env.NEXT_PUBLIC_DELETE_SUBJECT,
+}
+
+export const WEBSOCKET_API = {
+    "FACE_RECOGNITION": process.env.NEXT_PUBLIC_WS_FACE_RECOGNITION,
+    "MARK_ATTENDANCE": process.env.NEXT_PUBLIC_WS_ATTENDANCE,
+    "STUDENT_FACE_ATTENDANCE": process.env.NEXT_PUBLIC_WS_ATTENDANCE_STUDENT_FACE,
+    "WS_GET_NOTIFICATION": process.env.NEXT_PUBLIC_WS_GET_NOTIFICATION
+}
+
+export const ATTENDANCE_API = {
+    "FACULTY_ATTENDANCE": process.env.NEXT_PUBLIC_FACULTY_ATTENDANCE,
+    "STUDENT_ATTENDANCE": process.env.NEXT_PUBLIC_STUDENT_ATTENDANCE,
+    "VERIFY_ATTENDANCE": process.env.NEXT_PUBLIC_VERIFY_FACULTY_ATTENDANCE,
+    "SUBJECT_ATTENDANCE": process.env.NEXT_PUBLIC_SUBJECT_ATTENDANCE,
+    "CLASS_ATTENDANCE": process.env.NEXT_PUBLIC_CLASS_ATTENDANCE,
+    "GET_NOTIFICATION": process.env.NEXT_PUBLIC_CLASS_ATTENDANCE,
+}
+
+
+export const LECTURE_API = {
+    "GET_TODAY_LECTURE": process.env.NEXT_PUBLIC_GET_TODAY_LECTURE,
+    "START_CREATE_LECTURE": process.env.NEXT_PUBLIC_START_CREATE_LECTURE,
+    "END_LECTURE": process.env.NEXT_PUBLIC_END_LECTURE
+}
+
+
+export const ADMIN_OVERVIEW = {
+    "STATUS_COUNT": process.env.NEXT_PUBLIC_ADMIN_DASHBOARD_STATS,
+    "RECENT_ATTENDANCE": process.env.NEXT_PUBLIC_ADMIN_DASHBOARD_RECENT_ATTENDANCE
+}
+
+export const NOTIFICATION_API = {
+    "CREATE_NOTIFICATION": process.env.NEXT_PUBLIC_CREATE_NOTIFICATION,
+    "GET_NOTIFICATION": process.env.NEXT_PUBLIC_GET_NOTIFICATION,
+    "MARK_AS_READ": process.env.NEXT_PUBLIC_MARK_AS_READ,
+    "DELETE_NOTIFICATION": process.env.NEXT_PUBLIC_DELETE_NOTIFICATION,
+}
+
+export const EXAM_API = {
+    "CREATE": "/exams/create",
+    "GET": "/exams/get",
+}
+
+export const ASSIGNMENT_API = {
+    "CREATE": "/assignments/create",
+    "GET": "/assignments/get",
+}
+
+export const REPORTS_API = {
+    "LIST": "/reports/list",
+    "BY_DATE": "/reports",
+}

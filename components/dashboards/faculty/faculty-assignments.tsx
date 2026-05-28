@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { createAssignment } from "@/service/assignments.service"
 
 
 export function FacultyAssignments() {
@@ -35,12 +36,28 @@ export function FacultyAssignments() {
         },
     ]
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (!newAssign.title || !newAssign.subject) return
-        setAssignments((prev) => [...prev, { id: `AS${Date.now()}`, ...newAssign, status: "pending" as const, createdBy: "F001" }])
-        setNewAssign({ title: "", subject: "", dueDate: "", description: "" })
-        setIsAddOpen(false)
-        addToast({ title: "Assignment Created", description: `"${newAssign.title}" has been posted.`, variant: "success" })
+        
+        const assignmentData = {
+            title: newAssign.title,
+            subject: newAssign.subject,
+            dueDate: newAssign.dueDate,
+            description: newAssign.description,
+            status: "pending",
+            createdBy: "F001" // In a real app this would be the logged in user ID
+        }
+        
+        const createdAssignment = await createAssignment(assignmentData)
+        
+        if (createdAssignment) {
+            setAssignments((prev) => [...prev, createdAssignment.data])
+            setNewAssign({ title: "", subject: "", dueDate: "", description: "" })
+            setIsAddOpen(false)
+            addToast({ title: "Assignment Created", description: `"${newAssign.title}" has been posted.`, variant: "success" })
+        } else {
+            addToast({ title: "Error", description: `Failed to create assignment.`, variant: "destructive" })
+        }
     }
 
     const handleDelete = (id: string) => {
@@ -112,31 +129,37 @@ export function FacultyAssignments() {
             </Card>
          
 
-            <div className="grid gap-4 md:grid-cols-2">
-                {assignments.map((assignment) => (
-                    <Card key={assignment.id}>
-                        <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                                <CardTitle className="text-base">{assignment.title}</CardTitle>
-                                <Badge variant="secondary" className={assignment.status === "pending" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : assignment.status === "submitted" ? "bg-primary/15 text-primary border-primary/20" : "bg-accent/15 text-accent border-accent/20"}>
-                                    {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
-                                </Badge>
-                            </div>
-                            <CardDescription>{assignment.subject}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{assignment.description}</p>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Calendar className="h-3.5 w-3.5" /><span>Due: {assignment.dueDate}</span></div>
-                                <div className="flex flex-row gap-4">
-                                    <Button size="sm" variant="ghost" className="h-8 " onClick={() => setSubmissionDialogOpen(true)}>View Submission</Button>
-                                    <Button size="sm" variant="ghost" className="h-8 text-destructive" onClick={() => handleDelete(assignment.id)}>Delete</Button>
+            {assignments.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground border rounded-xl bg-card">
+                    <p>No assignments created yet.</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                    {assignments.map((assignment) => (
+                        <Card key={assignment.id}>
+                            <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between">
+                                    <CardTitle className="text-base">{assignment.title}</CardTitle>
+                                    <Badge variant="secondary" className={assignment.status === "pending" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : assignment.status === "submitted" ? "bg-primary/15 text-primary border-primary/20" : "bg-accent/15 text-accent border-accent/20"}>
+                                        {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
+                                    </Badge>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                                <CardDescription>{assignment.subject}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{assignment.description}</p>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground"><Calendar className="h-3.5 w-3.5" /><span>Due: {assignment.dueDate}</span></div>
+                                    <div className="flex flex-row gap-4">
+                                        <Button size="sm" variant="ghost" className="h-8 " onClick={() => setSubmissionDialogOpen(true)}>View Submission</Button>
+                                        <Button size="sm" variant="ghost" className="h-8 text-destructive" onClick={() => handleDelete(assignment.id)}>Delete</Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
 
             <SubmissionListDialog
                 open={submissionDialogOpen}

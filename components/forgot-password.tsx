@@ -12,12 +12,14 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { Loader2, Mail, Lock } from "lucide-react"
+import { Loader2, Mail, Lock, EyeOff, Eye } from "lucide-react"
 import {
     InputOTP,
     InputOTPGroup,
     InputOTPSlot,
 } from "@/components/ui/input-otp"
+import { API_BASE_URL, AUTH_API } from "@/lib/config"
+
 
 export default function ForgotPassword() {
     const router = useRouter()
@@ -30,51 +32,68 @@ export default function ForgotPassword() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
 
     // 🔹 Send OTP
-    const handleSendOtp = async (e: React.FormEvent) => {
+    const handleSendOtp = async (e: React.SubmitEvent) => {
         e.preventDefault()
         setLoading(true)
         setError("")
         setSuccess("")
 
         try {
-            // const res = await fetch("/api/send-otp", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ email }),
-            // })
+           
+            const res = await fetch(`${API_BASE_URL}${AUTH_API.SEND_OTP}?email=${ email }`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            })
 
-            // const data = await res.json()
+            const data = await res.json()
 
-            // if (!res.ok) throw new Error(data.detail || "Failed to send OTP")
+            if (!res.ok) throw new Error(data.details || "Failed to send OTP")
+           
+            if(!data.status)
+                setError(data.message)
 
-            setSuccess("OTP sent to your email")
-            setStep(2)
+            if (data.status){
+                setSuccess(data.message)
+                setStep(2)
+            }
+                
         } catch (err: any) {
             setError(err.message)
+            console.log(err.message)
         } finally {
             setLoading(false)
         }
     }
 
     // 🔹 Verify OTP
-    const handleVerifyOtp = async (e: React.FormEvent) => {
+    const handleVerifyOtp = async (e: React.SubmitEvent) => {
         e.preventDefault()
         setLoading(true)
         setError("")
 
         try {
-            // const res = await fetch("/api/verify-otp", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ email, otp }),
-            // })
+           
+            const res = await fetch(`${API_BASE_URL}${AUTH_API.VERIFY_OTP}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, otp }),
+            })
 
-            // const data = await res.json()
-            // if (!res.ok) throw new Error(data.detail || "Invalid OTP")
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.detail || "Invalid OTP")
+            
+            const message = data.message
+            const status = data.status
+            if(!status)
+                setError(message)
 
-            setStep(3)
+            if (status){
+                setSuccess(message)
+                setStep(3)
+            }
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -83,7 +102,7 @@ export default function ForgotPassword() {
     }
 
     // 🔹 Reset Password
-    const handleResetPassword = async (e: React.FormEvent) => {
+    const handleResetPassword = async (e: React.SubmitEvent) => {
         e.preventDefault()
         setError("")
         setSuccess("")
@@ -95,17 +114,24 @@ export default function ForgotPassword() {
         setLoading(true)
 
         try {
-            // const res = await fetch("/api/change-password", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ email, otp, new_password: password }),
-            // })
+            const res = await fetch(`${API_BASE_URL}${AUTH_API.CHANGE_PASSWORD}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email,new_password: password }),
+            })
 
-            // const data = await res.json()
-            // if (!res.ok) throw new Error(data.detail || "Failed to reset password")
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.detail || "Failed to reset password")
 
-            // setSuccess("Password reset successful. Redirecting...")
-            // setTimeout(() => router.push("/login"), 1500)
+            const status = data.status
+            const message = data.message
+            if(!status){
+                setError(message)
+            }
+            if(status){
+                setSuccess(message)
+            }
+            
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -198,13 +224,27 @@ export default function ForgotPassword() {
                     <form onSubmit={handleResetPassword} className="space-y-4">
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="password" className="text-card-foreground">New Password</Label>
+                            <div className="relative">
                             <Input
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 value={password}
                                 placeholder="new password"
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                
                             />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="w-4 h-4" />
+                                    ) : (
+                                        <Eye className="w-4 h-4" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="flex flex-col gap-2">

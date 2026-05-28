@@ -1,0 +1,28 @@
+components/dashboards/admin/admin-reports.tsx(112,71): error TS2551: Property 'facultyId' does not exist on type 'FacultyAttendance'. Did you mean 'faculty_id'?
+components/dashboards/admin/admin-reports.tsx(113,46): error TS2551: Property 'facultyName' does not exist on type 'FacultyAttendance'. Did you mean 'faculty_name'?
+components/dashboards/admin/admin-reports.tsx(120,125): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/admin/admin-reports.tsx(121,125): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/admin/face-recognition.tsx(111,83): error TS2345: Argument of type 'RefObject<HTMLVideoElement | null>' is not assignable to parameter of type 'RefObject<HTMLVideoElement>'.
+  Type 'HTMLVideoElement | null' is not assignable to type 'HTMLVideoElement'.
+    Type 'null' is not assignable to type 'HTMLVideoElement'.
+components/dashboards/faculty/attendance-camera.tsx(41,88): error TS2345: Argument of type 'RefObject<HTMLVideoElement | null>' is not assignable to parameter of type 'RefObject<HTMLVideoElement>'.
+  Type 'HTMLVideoElement | null' is not assignable to type 'HTMLVideoElement'.
+    Type 'null' is not assignable to type 'HTMLVideoElement'.
+components/dashboards/faculty/faculty-overview.tsx(19,80): error TS2551: Property 'markedBy' does not exist on type 'AttendanceRecord'. Did you mean 'marked_by'?
+components/dashboards/faculty/faculty-overview.tsx(23,62): error TS2551: Property 'facultyId' does not exist on type 'FacultyAttendance'. Did you mean 'faculty_id'?
+components/dashboards/faculty/faculty-overview.tsx(25,64): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/faculty/faculty-overview.tsx(34,39): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/faculty/faculty-overview.tsx(34,106): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/faculty/faculty-overview.tsx(44,60): error TS2551: Property 'checkIn' does not exist on type 'FacultyAttendance'. Did you mean 'check_in'?
+components/dashboards/faculty/faculty-overview.tsx(44,78): error TS2551: Property 'checkOut' does not exist on type 'FacultyAttendance'. Did you mean 'check_out'?
+components/dashboards/faculty/faculty-overview.tsx(44,107): error TS2551: Property 'checkOut' does not exist on type 'FacultyAttendance'. Did you mean 'check_out'?
+components/dashboards/faculty/faculty-overview.tsx(44,160): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/faculty/faculty-overview.tsx(51,31): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/faculty/faculty-overview.tsx(52,31): error TS2551: Property 'verificationStatus' does not exist on type 'FacultyAttendance'. Did you mean 'verification_status'?
+components/dashboards/student/student-overview.tsx(22,51): error TS2551: Property 'studentId' does not exist on type 'AttendanceRecord'. Did you mean 'student_id'?
+components/face-recognition.tsx(37,90): error TS2345: Argument of type 'RefObject<HTMLVideoElement | null>' is not assignable to parameter of type 'RefObject<HTMLVideoElement>'.
+  Type 'HTMLVideoElement | null' is not assignable to type 'HTMLVideoElement'.
+    Type 'null' is not assignable to type 'HTMLVideoElement'.
+components/ui/calendar.tsx(57,9): error TS2353: Object literal may only specify known properties, and 'IconLeft' does not exist in type 'Partial<CustomComponents>'.
+components/ui/location-picker.tsx(70,34): error TS18048: 'location' is possibly 'undefined'.
+components/ui/location-picker.tsx(71,34): error TS18048: 'location' is possibly 'undefined'.

@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
+import { createExam } from "@/service/exams.service"
 
 
 
@@ -22,12 +23,28 @@ export function FacultyExams() {
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [newExam, setNewExam] = useState({ subject: "", date: "", time: "", venue: "", type: "Mid-term" })
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (!newExam.subject || !newExam.date) return
-        setExams((prev) => [...prev, { id: `E${Date.now()}`, ...newExam }])
-        setNewExam({ subject: "", date: "", time: "", venue: "", type: "Mid-term" })
-        setIsAddOpen(false)
-        addToast({ title: "Exam Scheduled", description: `${newExam.subject} ${newExam.type} has been scheduled.`, variant: "success" })
+        
+        const examData = {
+            subject: newExam.subject,
+            date: newExam.date,
+            time: newExam.time,
+            venue: newExam.venue,
+            type: newExam.type,
+            class_id: "all"
+        }
+        
+        const createdExam = await createExam(examData)
+        
+        if (createdExam) {
+            setExams((prev) => [...prev, createdExam.data])
+            setNewExam({ subject: "", date: "", time: "", venue: "", type: "Mid-term" })
+            setIsAddOpen(false)
+            addToast({ title: "Exam Scheduled", description: `${newExam.subject} ${newExam.type} has been scheduled.`, variant: "success" })
+        } else {
+            addToast({ title: "Error", description: `Failed to schedule exam.`, variant: "destructive" })
+        }
     }
 
     return (
@@ -78,15 +95,23 @@ export function FacultyExams() {
                     <Table>
                         <TableHeader><TableRow><TableHead>Subject</TableHead><TableHead>Type</TableHead><TableHead>Date</TableHead><TableHead>Time</TableHead><TableHead>Venue</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {exams.map((exam) => (
-                                <TableRow key={exam.id}>
-                                    <TableCell className="font-medium text-foreground">{exam.subject}</TableCell>
-                                    <TableCell><Badge variant="secondary">{exam.type}</Badge></TableCell>
-                                    <TableCell>{exam.date}</TableCell>
-                                    <TableCell>{exam.time}</TableCell>
-                                    <TableCell>{exam.venue}</TableCell>
+                            {exams.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                                        No exams scheduled.
+                                    </TableCell>
                                 </TableRow>
-                            ))}
+                            ) : (
+                                exams.map((exam) => (
+                                    <TableRow key={exam.id}>
+                                        <TableCell className="font-medium text-foreground">{exam.subject}</TableCell>
+                                        <TableCell><Badge variant="secondary">{exam.type}</Badge></TableCell>
+                                        <TableCell>{exam.date}</TableCell>
+                                        <TableCell>{exam.time}</TableCell>
+                                        <TableCell>{exam.venue}</TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>

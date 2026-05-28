@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useEffect, useMemo } from "react"
+import React, { useEffect, useMemo, useRef } from "react"
 import { useState } from "react"
-import { Role, User } from "@/lib/types"
+import { AttendanceRecord, Role, User } from "@/lib/types"
 import { useAppState } from "@/lib/app-state"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,12 +21,17 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { getMonthlyAttendanceChartData, getWeeklyAttendanceChartData } from "@/lib/utils"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Label } from "@/components/ui/label"
+import { getFilterUsers } from "@/service/users.service"
+import { getStudentAttendance } from "@/service/attendance.service"
+import { CircularLoader } from "@/components/ui/circular-loader"
+import { exportToPdf } from "@/lib/export-pdf"
 
 
 
 export function StudentAttendanceRecord() {
 
-    const { users, attendance, } = useAppState()
+    const [users, setUsers] = useState<User[]>([])
+    const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [showOverlay, setShowOverlay] = useState(false)
     const wrapperRef = React.useRef<HTMLDivElement>(null)
@@ -34,8 +39,10 @@ export function StudentAttendanceRecord() {
     const [currentPage, setCurrentPage] = useState(1)
     const [fromDate, setFromDate] = useState<string>("")
     const [toDate, setToDate] = useState<string>("")
-
-
+    const [isLoading, setIsLoading] = useState<boolean>(true)
+    const [exportLoading, setExportLoading] = useState<boolean>(false)
+    const weeklyChartRef = useRef<HTMLDivElement>(null)
+    const monthlyChartRef = useRef<HTMLDivElement>(null)
 
     const filteredUsers = users.filter((u) => ((u.name.toLowerCase().includes(searchTerm.trim().toLowerCase())) ||
         (u.email.toLowerCase().includes(searchTerm.trim().toLowerCase())) ||
@@ -44,7 +51,7 @@ export function StudentAttendanceRecord() {
 
 
     const filterAttendance = attendance.filter((a) => {
-        if (selectedUser && a.studentId !== selectedUser.id) return false
+        if (selectedUser && a.student_id !== selectedUser.id) return false
 
         if (fromDate && a.date < fromDate) return false
         if (toDate && a.date > toDate) return false
@@ -58,6 +65,47 @@ export function StudentAttendanceRecord() {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     const paginatedAttendance = filterAttendance.slice(startIndex, endIndex)
+
+
+    useEffect(() => {
+        const getData = async () => {
+            const [users_data, attendance_record] = await Promise.all([
+                getFilterUsers({ 'search': 'student' }),
+                getStudentAttendance()
+            ])
+            setUsers(users_data)
+            setAttendance(attendance_record)
+            setIsLoading(false)
+        }
+        getData()
+    }, [])
+
+    const handleExport = async () => {
+            const today = new Date()
+            const dateFilter = today.toISOString().split("T")[0]
+            setExportLoading(true)
+            await exportToPdf({
+                title: "Student Attendance Report",
+                fileName: `student-attendance-${dateFilter}.pdf`,
+                charts: [weeklyChartRef, monthlyChartRef],
+                tableHeaders: [
+                    "Student",
+                    "Subject",
+                    "Date",
+                    "Method",
+                    "Status"
+                ],
+                tableData: filterAttendance,
+                mapRow: (r) => [
+                    r.student_name,
+                    r.subject_name,
+                    r.date,
+                    r.method??'--',
+                    r.status,
+                ],
+            })
+            setExportLoading(false)
+        }
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -115,7 +163,7 @@ export function StudentAttendanceRecord() {
                         hover:text-red-600
                         hover:border-red-100"
                     ><RotateCcw className="h-4 w-4 text-red-600" />Reset</Button>
-                    <Button variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export</Button>
+                    <Button disabled = {exportLoading} onClick={handleExport} variant="outline" className="gap-2 bg-transparent"><Download className="h-4 w-4" />Export</Button>
                 </div>
             </div>
 
@@ -241,34 +289,47 @@ export function StudentAttendanceRecord() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {paginatedAttendance.length === 0 &&
-                                <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No record found</TableCell></TableRow>
+                            {
+                                isLoading ? (
+                                    <TableRow className="py-2"  >
+                                        <TableCell colSpan={6} >
+                                            <CircularLoader />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    <>
+                                        {paginatedAttendance.length === 0 &&
+                                            <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No record found</TableCell></TableRow>}
+
+                                        {paginatedAttendance.map((r) => (
+
+                                            <TableRow key={r.id}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{r.student_name.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-foreground">{r.student_name}</p>
+                                                            <p className="text-xs text-muted-foreground">{r.student_id}</p>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+
+                                                <TableCell>{r.student_name}</TableCell>
+                                                <TableCell>{r.date}</TableCell>
+                                                <TableCell><Badge variant="secondary" className="text-xs capitalize">{r.method?.replace("-", " ") ?? "manual"}</Badge></TableCell>
+                                                <TableCell>
+                                                    <Badge className={r.status === "present" ? "bg-primary/15 text-primary border-primary/20" : r.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
+                                                        {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </>
+                                )
                             }
-                            {paginatedAttendance.map((r) => (
-                                <TableRow key={r.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{r.studentName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{r.studentName}</p>
-                                                <p className="text-xs text-muted-foreground">{r.studentId}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    
-                                    <TableCell>{r.subject}</TableCell>
-                                    <TableCell>{r.date}</TableCell>
-                                    <TableCell><Badge variant="secondary" className="text-xs capitalize">{r.method?.replace("-", " ") ?? "manual"}</Badge></TableCell>
-                                    <TableCell>
-                                        <Badge className={r.status === "present" ? "bg-primary/15 text-primary border-primary/20" : r.status === "late" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-destructive/15 text-destructive border-destructive/20"}>
-                                            {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                                        </Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
                         </TableBody>
                     </Table>
-                    {paginatedAttendance.length > 0 && <Pagination className="my-4">
+                    {!isLoading && paginatedAttendance.length > 0 && <Pagination className="my-4">
                         <PaginationContent>
 
                             <PaginationItem>
@@ -328,7 +389,7 @@ export function StudentAttendanceRecord() {
                         <CardDescription>Present vs absent students this week</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-64">
+                        <div className="h-64" ref={weeklyChartRef}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={weeklyAttendanceData}>
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -349,7 +410,7 @@ export function StudentAttendanceRecord() {
                         <CardDescription>Average attendance percentage per month</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-64">
+                        <div className="h-64" ref={monthlyChartRef}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={monthlyAttendanceData}>
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -388,14 +449,14 @@ export function StudentAttendanceRecord() {
                                 <TableRow key={r.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{r.studentName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                                            <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary/10 text-primary text-xs">{r.student_name.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
                                             <div>
-                                                <p className="text-sm font-medium text-foreground">{r.studentName}</p>
-                                                <p className="text-xs text-muted-foreground">{r.studentId}</p>
+                                                <p className="text-sm font-medium text-foreground">{r.student_name}</p>
+                                                <p className="text-xs text-muted-foreground">{r.student_id}</p>
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{r.subject}</TableCell>
+                                    <TableCell>{r.subject_name}</TableCell>
                                     <TableCell>{r.date}</TableCell>
                                     <TableCell><Badge variant="secondary" className="text-xs capitalize">{r.method?.replace("-", " ") ?? "manual"}</Badge></TableCell>
                                     <TableCell>

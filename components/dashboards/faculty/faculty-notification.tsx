@@ -23,7 +23,7 @@ export function FacultyNotifications() {
 
     const handleSend = () => {
         if (!title || !message) return
-        setNotifications((prev) => [{ id: `N${Date.now()}`, title, message, category, read: false, timestamp: new Date().toISOString() }, ...prev])
+        setNotifications((prev) => [{ id: `N${Date.now()}`, title, message, category, read: false, created_at: new Date().toISOString() }, ...prev])
         addToast({ title: "Notification Sent", description: `"${title}" broadcast to students.`, variant: "success" })
         setTitle("")
         setMessage("")

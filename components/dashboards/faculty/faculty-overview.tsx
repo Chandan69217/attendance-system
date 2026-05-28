@@ -4,25 +4,58 @@ import { useAuth } from "@/lib/auth-context"
 import { useAppState } from "@/lib/app-state"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { weeklyAttendanceData } from "@/lib/mock-data"
 import {
   CheckCircle2, XCircle, Clock,
   Fingerprint,
   FileText, 
 } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts"
-
+import { useEffect, useState } from "react"
+import { getFacultyAttendance, getStudentAttendance } from "@/service/attendance.service"
+import { getLecture } from "@/service/lecture.service"
+import { AttendanceRecord, FacultyAttendance, Lecture } from "@/lib/types"
 
 export function FacultyOverview() {
     const { user } = useAuth()
-    const { attendance, facultyAttendance, assignments, exams } = useAppState()
-    const todayRecords = attendance.filter((a) => a.date === "2026-02-06" && a.markedBy === "F001")
+    const { assignments } = useAppState()
+    const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([])
+    const [myToday, setMyToday] = useState<FacultyAttendance | undefined>(undefined)
+    const [pendingVerification, setPendingVerification] = useState(0)
+    const [weeklyData, setWeeklyData] = useState<any[]>([])
+    
+    useEffect(() => {
+        if (!user) return
+
+        const fetchData = async () => {
+            const date = new Date().toISOString().split("T")[0]
+            
+            // Fetch students' attendance marked by this faculty
+            try {
+                const stdAttendance = await getStudentAttendance(undefined, date)
+                if (stdAttendance) {
+                    setTodayRecords(stdAttendance.filter(a => a.marked_by === user.id))
+                }
+            } catch (e) {}
+
+            // Fetch my attendance
+            try {
+                const facAtt = await getFacultyAttendance(user.id, date)
+                if (facAtt && facAtt.length > 0) {
+                    setMyToday(facAtt[0])
+                }
+                const allFacAtt = await getFacultyAttendance(user.id)
+                if (allFacAtt) {
+                    setPendingVerification(allFacAtt.filter(fa => fa.verification_status === "pending").length)
+                }
+            } catch (e) {}
+        }
+        
+        fetchData()
+    }, [user])
+
     const presentCount = todayRecords.filter((a) => a.status === "present").length
     const absentCount = todayRecords.filter((a) => a.status === "absent").length
-    const pendingAssignments = assignments.filter((a) => a.status === "pending" && a.createdBy === "F001").length
-    const myAttendance = facultyAttendance.filter((fa) => fa.facultyId === "F001")
-    const myToday = myAttendance.find((fa) => fa.date === "2026-02-06")
-    const pendingVerification = myAttendance.filter((fa) => fa.verificationStatus === "pending").length
+    const pendingAssignments = assignments.filter((a) => a.status === "pending" && a.createdBy === user?.id).length
 
     return (
         <div className="flex flex-col gap-6">
@@ -31,7 +64,7 @@ export function FacultyOverview() {
                 <p className="text-sm text-muted-foreground">Here is your daily summary and quick actions.</p>
             </div>
 
-            <Card className={myToday?.verificationStatus === "approved" ? "border-primary/30" : myToday?.verificationStatus === "pending" ? "border-chart-3/30" : ""}>
+            <Card className={myToday?.verification_status === "approved" ? "border-primary/30" : myToday?.verification_status === "pending" ? "border-chart-3/30" : ""}>
                 <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                         <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${myToday ? "bg-primary/10" : "bg-muted"}`}>
@@ -41,15 +74,15 @@ export function FacultyOverview() {
                             <p className="text-sm font-medium text-foreground">Your Attendance Today</p>
                             {myToday ? (
                                 <p className="text-xs text-muted-foreground">
-                                    Checked in at {myToday.checkIn} {myToday.checkOut ? `| Out: ${myToday.checkOut}` : "| Not checked out"} | Status: {myToday.verificationStatus}
+                                    Checked in at {myToday.check_in} {myToday.check_out ? `| Out: ${myToday.check_out}` : "| Not checked out"} | Status: {myToday.verification_status}
                                 </p>
                             ) : (
                                 <p className="text-xs text-muted-foreground">Not checked in yet</p>
                             )}
                         </div>
                     </div>
-                    {myToday?.verificationStatus === "approved" && <Badge className="bg-primary/15 text-primary border-primary/20">Verified</Badge>}
-                    {myToday?.verificationStatus === "pending" && <Badge className="bg-chart-3/15 text-chart-3 border-chart-3/20">Pending Verification</Badge>}
+                    {myToday?.verification_status === "approved" && <Badge className="bg-primary/15 text-primary border-primary/20">Verified</Badge>}
+                    {myToday?.verification_status === "pending" && <Badge className="bg-chart-3/15 text-chart-3 border-chart-3/20">Pending Verification</Badge>}
                     {!myToday && <Badge variant="destructive">Not Marked</Badge>}
                 </CardContent>
             </Card>
@@ -80,7 +113,7 @@ export function FacultyOverview() {
                 <CardContent>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={weeklyAttendanceData}>
+                            <BarChart data={weeklyData}>
                                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                                 <XAxis dataKey="day" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                                 <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />

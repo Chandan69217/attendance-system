@@ -80,10 +80,10 @@ export function getSubjectAttendanceChartData(
   const subjectMap: Record<string, AttendanceRecord[]> = {}
 
   attendance.forEach((a) => {
-    if (!subjectMap[a.subject]) {
-      subjectMap[a.subject] = []
+    if (!subjectMap[a.subject_name]) {
+      subjectMap[a.subject_name] = []
     }
-    subjectMap[a.subject].push(a)
+    subjectMap[a.subject_name].push(a)
   })
 
   return Object.entries(subjectMap).map(([subject, records]) => {
@@ -108,13 +108,40 @@ export function getSubjectAttendanceSummary(
       { present: number; absent: number; late: number; total: number }
     >
   >((acc, a) => {
-    if (!acc[a.subject]) {
-      acc[a.subject] = { present: 0, absent: 0, late: 0, total: 0 }
+    if (!acc[a.subject_name]) {
+      acc[a.subject_name] = { present: 0, absent: 0, late: 0, total: 0 }
     }
 
-    acc[a.subject][a.status]++
-    acc[a.subject].total++
+    acc[a.subject_name][a.status]++
+    acc[a.subject_name].total++
 
     return acc
   }, {})
+}
+
+
+export const formatDateTime = (utcTimestamp: string | number | Date) => {
+  if (!utcTimestamp) return ""
+
+  const date = new Date(utcTimestamp)
+
+  const day = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+  }).format(date)
+
+  const month = new Intl.DateTimeFormat("en-GB", {
+    month: "2-digit",
+  }).format(date)
+
+  const year = new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+  }).format(date)
+
+  const time = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date)
+
+  return `${day}-${month}-${year}`
 }

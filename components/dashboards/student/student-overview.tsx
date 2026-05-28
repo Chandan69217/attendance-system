@@ -8,18 +8,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { subjectAttendanceData } from "@/lib/mock-data"
 import {
   ClipboardList, FileText, Calendar, Bell, TrendingUp, TrendingDown,
   Clock, BookOpen, AlertCircle,
 } from "lucide-react"
+import { useEffect } from "react"
+import { getStudentAttendance, getAttendanceBySubject } from "@/service/attendance.service"
+import { AttendanceRecord, SubjectAttendance } from "@/lib/types"
 
 
 
 export function StudentOverview() {
   const { user } = useAuth()
-  const { attendance, assignments, exams, notifications } = useAppState()
-  const myAttendance = attendance.filter((a) => a.studentId === (user?.id ?? "S001"))
+  const { assignments, exams, notifications } = useAppState()
+  
+  const [myAttendance, setMyAttendance] = useState<AttendanceRecord[]>([])
+  const [subjectAttendanceData, setSubjectAttendanceData] = useState<SubjectAttendance[]>([])
+  
+  useEffect(() => {
+    if (!user) return
+    const fetchData = async () => {
+      try {
+        const attendanceRes = await getStudentAttendance(user.id)
+        if (attendanceRes) setMyAttendance(attendanceRes)
+
+        const subjectRes = await getAttendanceBySubject()
+        if (subjectRes) setSubjectAttendanceData(subjectRes)
+      } catch (err) {
+        console.error("Error fetching student attendance:", err)
+      }
+    }
+    fetchData()
+  }, [user])
+
   const totalClasses = myAttendance.length
   const presentClasses = myAttendance.filter((a) => a.status === "present" || a.status === "late").length
   const overallPercent = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 0
@@ -113,6 +134,7 @@ export function StudentOverview() {
                   </div>
                 )
               })}
+              {exams.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">No upcoming exams</p>}
             </div>
           </CardContent>
         </Card>

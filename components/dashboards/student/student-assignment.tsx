@@ -62,38 +62,44 @@ export function StudentAssignments() {
                 </div>
             </Card>
 
-            <div className="grid gap-4 md:grid-cols-2">
-                {filteredAssignments.map((assignment) => {
-                    const daysLeft = Math.ceil((new Date(assignment.dueDate).getTime() - new Date("2026-02-06").getTime()) / (1000 * 60 * 60 * 24))
-                    return (
-                        <Card key={assignment.id}>
-                            <CardHeader className="pb-3">
-                                <div className="flex items-start justify-between">
-                                    <CardTitle className="text-base">{assignment.title}</CardTitle>
-                                    <Badge variant="secondary" className={assignment.status === "pending" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-primary/15 text-primary border-primary/20"}>
-                                        {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
-                                    </Badge>
-                                </div>
-                                <CardDescription>{assignment.subject}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{assignment.description}</p>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Clock className="h-3.5 w-3.5" /><span>Due: {assignment.dueDate}</span>
-                                        {daysLeft > 0 && daysLeft <= 7 && <Badge variant="destructive" className="text-[10px]">{daysLeft}d left</Badge>}
+            {filteredAssignments.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground border rounded-xl bg-card">
+                    <p>No assignments available.</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                    {filteredAssignments.map((assignment) => {
+                        const daysLeft = Math.ceil((new Date(assignment.dueDate).getTime() - new Date("2026-02-06").getTime()) / (1000 * 60 * 60 * 24))
+                        return (
+                            <Card key={assignment.id}>
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <CardTitle className="text-base">{assignment.title}</CardTitle>
+                                        <Badge variant="secondary" className={assignment.status === "pending" ? "bg-chart-3/15 text-chart-3 border-chart-3/20" : "bg-primary/15 text-primary border-primary/20"}>
+                                            {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
+                                        </Badge>
                                     </div>
-                                    {assignment.status === "pending" && (
-                                        <Button size="sm" onClick={() => handleSubmit(assignment.id)} className="gap-1">
-                                            <CheckCircle2 className="h-3.5 w-3.5" />Submit
-                                        </Button>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )
-                })}
-            </div>
+                                    <CardDescription>{assignment.subject}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{assignment.description}</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Clock className="h-3.5 w-3.5" /><span>Due: {assignment.dueDate}</span>
+                                            {daysLeft > 0 && daysLeft <= 7 && <Badge variant="destructive" className="text-[10px]">{daysLeft}d left</Badge>}
+                                        </div>
+                                        {assignment.status === "pending" && (
+                                            <Button size="sm" onClick={() => handleSubmit(assignment.id)} className="gap-1">
+                                                <CheckCircle2 className="h-3.5 w-3.5" />Submit
+                                            </Button>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </div>
+            )}
         </div>
     )
 }
